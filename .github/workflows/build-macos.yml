@@ -18,21 +18,40 @@ jobs:
       - name: Install dependencies
         run: |
           brew install cmake ninja
+          pip3 install gdown
 
       - name: Bundle UI
         shell: bash
         working-directory: vst
         run: bash bundle-ui.sh
 
-      - name: Pack banks (if present)
+      - name: Download & recombine sound banks
         shell: bash
         working-directory: vst
         run: |
-          if [ -d banks ] && [ "$(find banks -name '*.wav' | head -1)" ]; then
-            bash pack-banks.sh
-          else
-            echo "No .wav samples found - skipping bank pack"
+          echo "Downloading bank pack part 1 from Google Drive..."
+          gdown "1awAW5NPC_9QVf7ro59EATCzrLpHzQ9QR" -O SynthlenKhmer.banks.part1 || \
+            curl -L "https://drive.google.com/uc?export=download&id=1awAW5NPC_9QVf7ro59EATCzrLpHzQ9QR" -o SynthlenKhmer.banks.part1
+
+          echo "Downloading bank pack part 2 from Google Drive..."
+          gdown "1ncpgk5fk3ERz7wTq7d668VhqJsR7kmvv" -O SynthlenKhmer.banks.part2 || \
+            curl -L "https://drive.google.com/uc?export=download&id=1ncpgk5fk3ERz7wTq7d668VhqJsR7kmvv" -o SynthlenKhmer.banks.part2
+
+          echo "Recombining..."
+          cat SynthlenKhmer.banks.part1 SynthlenKhmer.banks.part2 > SynthlenKhmer.banks
+
+          SIZE=$(stat -f%z SynthlenKhmer.banks 2>/dev/null || stat -c%s SynthlenKhmer.banks)
+          echo "Combined banks file: $SIZE bytes ($((SIZE / 1048576)) MB)"
+
+          # Verify magic header
+          MAGIC=$(head -c 6 SynthlenKhmer.banks)
+          echo "Magic header: $MAGIC"
+          if [ "$MAGIC" != "SYNKB1" ]; then
+            echo "WARNING: Bad magic header - banks file may be corrupt"
           fi
+
+          # Clean up parts
+          rm -f SynthlenKhmer.banks.part1 SynthlenKhmer.banks.part2
 
       - name: Configure CMake
         shell: bash
@@ -125,6 +144,8 @@ jobs:
 
           echo "=== Installer created ==="
           ls -lh "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.pkg"
+          echo "Banks file size:"
+          ls -lh SynthlenKhmer.banks 2>/dev/null || echo "No banks file"
 
       - name: Upload macOS Installer
         uses: actions/upload-artifact@v4
