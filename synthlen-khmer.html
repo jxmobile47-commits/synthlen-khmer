@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synthlen Khmer</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&display=swap');
+:root { --g:#d4b872; --gl:#f2db98; --gd:#8a733b; --s:#1e2420; --sm:#2f3a33; }
+*{box-sizing:border-box;margin:0}
+html{overscroll-behavior:none}
+body{background:#0a0c0b;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:100vh;font-family:'Cinzel',serif;color:var(--g);overflow:auto;overscroll-behavior:none;padding:20px 0;user-select:none;-webkit-user-select:none;-ms-user-select:none}
+.plugin-container{width:1100px;min-height:680px;background:linear-gradient(145deg,#2f3a33f2,#1e2420fa);position:relative;padding:40px;border:3px solid #1a211d;box-shadow:0 40px 80px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.7)}
+.plugin-container::before{content:'';position:absolute;inset:8px;border:2px solid var(--gd);opacity:0.4;pointer-events:none}
+.corner{position:absolute;width:70px;height:90px;pointer-events:none;z-index:10;opacity:0.8}
+.corner svg{width:100%;height:100%;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.8))}
+.tl{top:-15px;left:-15px}.tr{top:-15px;right:-15px;transform:scaleX(-1)}
+.bl{bottom:-15px;left:-15px;transform:scaleY(-1)}.br{bottom:-15px;right:-15px;transform:scale(-1)}
+.header{text-align:center;position:relative;margin-bottom:30px;padding:15px 0}
+.header::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:480px;height:100%;background:linear-gradient(to bottom,rgba(212,184,114,0.1),transparent);border-top:2px solid rgba(212,184,114,0.3);clip-path:polygon(0 0,100% 0,90% 100%,10% 100%)}
+.header h1{font-size:36px;letter-spacing:6px;font-weight:900;color:var(--gl);text-shadow:0 1px 0 var(--gd),0 2px 4px rgba(0,0,0,0.8),0 0 20px rgba(212,184,114,0.3);position:relative}
+.header p{font-size:10px;letter-spacing:5px;margin-top:6px;color:var(--gd);text-transform:uppercase;font-weight:600;position:relative}
+.main-layout{display:grid;grid-template-columns:250px 1fr 250px;gap:20px;align-items:stretch}
+.panel{background:linear-gradient(145deg,rgba(255,255,255,0.03),rgba(0,0,0,0.2));border:1px solid rgba(212,184,114,0.15);box-shadow:inset 0 1px 0 rgba(255,255,255,0.05),0 4px 15px rgba(0,0,0,0.4);position:relative;padding:12px}
+.panel::before{content:'';position:absolute;inset:4px;border:1px solid rgba(212,184,114,0.08);pointer-events:none}
+.sec-title{font-size:9px;letter-spacing:3px;color:var(--gd);text-align:center;padding:6px 0;border-bottom:1px solid rgba(212,184,114,0.1);margin-bottom:10px;font-weight:600}
+.knob-row{display:flex;gap:15px;justify-content:center;margin-bottom:15px}
+.knob-c{display:flex;flex-direction:column;align-items:center;gap:6px}
+.knob{width:55px;height:55px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#5e6b62,#252b27);box-shadow:4px 4px 10px rgba(0,0,0,0.6),inset 0 0 8px rgba(0,0,0,0.6);position:relative;cursor:ns-resize;border:2px solid #1f2622}
+.knob::before{content:'';position:absolute;inset:5px;border-radius:50%;border:1px dashed rgba(212,184,114,0.25)}
+.knob-i{width:3px;height:14px;background:linear-gradient(to bottom,var(--gl),var(--gd));position:absolute;top:5px;left:calc(50% - 1.5px);border-radius:2px;transform-origin:1.5px 22.5px;transform:rotate(-135deg);box-shadow:0 0 6px var(--g)}
+.knob-l{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-shadow:1px 1px 2px rgba(0,0,0,0.9);color:var(--g)}
+.knob-sub{font-size:7px;color:var(--gd);margin-top:-3px;letter-spacing:1px}
+.center{display:flex;flex-direction:column;gap:15px;padding:0 8px}
+.scr-f{padding:0;position:relative}
+.scr{background:#080a08;height:180px;padding:18px;position:relative;overflow:hidden}
+.scr-t{position:absolute;top:15px;left:18px;font-size:15px;letter-spacing:2px}
+.glyph{position:absolute;top:42px;left:18px;font-size:18px;color:rgba(212,184,114,0.25);font-family:serif}
+.angkor{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);width:78%;opacity:0.4;pointer-events:none}
+.angkor polygon,.angkor rect{fill:rgba(212,184,114,0.22)}
+.fx{background:linear-gradient(145deg,rgba(255,255,255,0.02),rgba(0,0,0,0.15));border:1px solid rgba(212,184,114,0.12);padding:10px;box-shadow:inset 0 2px 10px rgba(0,0,0,0.4)}
+.fx-t{text-align:center;font-size:10px;letter-spacing:3px;font-weight:700;margin-bottom:6px;color:var(--g)}
+.fx-l{display:flex;justify-content:space-around;font-size:7px;color:var(--gd);letter-spacing:2px;margin-bottom:10px}
+.fx-btns{display:flex;justify-content:center;gap:8px;margin-bottom:10px}
+.fx-btn{flex:1;max-width:90px;padding:7px 4px;font-family:'Cinzel',serif;font-size:8px;font-weight:700;letter-spacing:2px;color:var(--gd);text-align:center;background:linear-gradient(145deg,#252b27,#1a1e1b);border:1px solid rgba(212,184,114,0.25);border-radius:3px;cursor:pointer;transition:all 0.25s;box-shadow:inset 0 1px 4px rgba(0,0,0,0.5),0 1px 2px rgba(0,0,0,0.4);text-transform:uppercase;user-select:none}
+.fx-btn:hover{border-color:rgba(212,184,114,0.6);color:var(--g);box-shadow:inset 0 1px 4px rgba(0,0,0,0.4),0 0 8px rgba(212,184,114,0.15)}
+.fx-btn.on{background:linear-gradient(145deg,#d4b872,#8a733b);color:#1a1e1b;border-color:var(--gl);box-shadow:inset 0 1px 3px rgba(255,255,255,0.2),0 0 10px rgba(212,184,114,0.4)}
+.pt{background:linear-gradient(145deg,#252b27,#1e2420);border:1px solid rgba(212,184,114,0.2);border-radius:3px;padding:8px;box-shadow:inset 0 2px 8px rgba(0,0,0,0.6);text-align:center}
+.pt-t{font-size:9px;letter-spacing:3px;font-weight:700;color:var(--g);margin-bottom:6px}
+.pt-l{background:#080a08;border:1px solid #1a1e1b;border-radius:2px;padding:6px;color:#666;font-size:11px;line-height:2;text-align:center;max-height:120px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(212,184,114,0.3) rgba(0,0,0,0.3);-webkit-overflow-scrolling:touch;cursor:grab}
+.pt-l::-webkit-scrollbar{width:4px}
+.pt-l::-webkit-scrollbar-track{background:rgba(0,0,0,0.3)}
+.pt-l::-webkit-scrollbar-thumb{background:rgba(212,184,114,0.3);border-radius:2px}
+.pt-l.dragging{cursor:grabbing}
+.pt-a{color:var(--g);background:rgba(212,184,114,0.12);border-radius:2px;font-weight:700;text-shadow:0 0 5px rgba(212,184,114,0.3)}
+.pt-a.active{background:rgba(212,184,114,0.35);color:#fff;box-shadow:0 0 10px rgba(212,184,114,0.3)}
+.inst{background:linear-gradient(145deg,rgba(255,255,255,0.02),rgba(0,0,0,0.2));border:1px solid rgba(212,184,114,0.12);padding:8px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-height:130px;box-shadow:inset 0 0 15px rgba(0,0,0,0.3);position:relative}
+.inst::before{content:'';position:absolute;top:5px;left:50%;transform:translateX(-50%);width:80%;height:2px;background:linear-gradient(to right,transparent,var(--gd),transparent);opacity:0.4}
+.inst svg{width:90%;height:90px;opacity:0.7;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5))}
+.inst-l{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--g);text-shadow:1px 1px 2px rgba(0,0,0,0.8);padding-top:5px;border-top:1px solid rgba(212,184,114,0.1);width:100%;text-align:center}
+.bottom{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:auto;width:100%}
+.bayon{position:absolute;bottom:35px;left:50%;transform:translateX(-50%);width:70px;height:90px;opacity:0.55;pointer-events:none;z-index:5}
+.bayon svg{width:100%;height:100%;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.6))}
+.aps{position:absolute;bottom:35px;width:40px;height:75px;opacity:0.45;z-index:4}
+.aps svg{width:100%;height:100%;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5))}
+.al{left:330px}.ar{right:330px}
+.logo{position:absolute;bottom:18px;right:30px;width:60px;height:60px;z-index:10}
+.logo svg{width:100%;height:100%;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.6))}
+.side-l{writing-mode:vertical-rl;text-orientation:mixed;position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:8px;letter-spacing:3px;color:var(--gd);opacity:0.5}
+.side-r{writing-mode:vertical-rl;text-orientation:mixed;position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:8px;letter-spacing:3px;color:var(--gd);opacity:0.5}
+.upload-zone{width:100%;height:100px;border:2px dashed rgba(212,184,114,0.25);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden;background:rgba(0,0,0,0.15)}
+.upload-zone:hover,.upload-zone.dragover{border-color:rgba(212,184,114,0.6);background:rgba(212,184,114,0.05);box-shadow:0 0 15px rgba(212,184,114,0.1)}
+.upload-zone .u-icon{font-size:20px;color:var(--gd);margin-bottom:4px;opacity:0.6}
+.upload-zone .u-text{font-size:8px;color:var(--gd);letter-spacing:1px;text-align:center;line-height:1.6}
+.upload-zone img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;opacity:0.85;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.upload-zone img:active{cursor:grabbing}
+.upload-zone input[type=file]{display:none}
+.chayam-zone{width:100%;margin-top:10px}
+.chayam-zone .upload-zone{height:90px}
+.bg-upload{position:absolute;top:8px;right:8px;z-index:20;width:28px;height:28px;border-radius:50%;background:rgba(30,36,32,0.8);border:1px solid rgba(212,184,114,0.4);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.3s;box-shadow:0 2px 6px rgba(0,0,0,0.5)}
+.bg-upload:hover{background:rgba(212,184,114,0.15);border-color:var(--gl);box-shadow:0 0 10px rgba(212,184,114,0.2)}
+.bg-upload svg{width:14px;height:14px;fill:var(--gd)}
+.bg-upload input[type=file]{display:none}
+.bg-controls{position:absolute;top:8px;right:40px;z-index:20;display:none;gap:4px;align-items:center}
+.plugin-container.bg-set .bg-controls{display:flex}
+.bg-btn{width:24px;height:24px;border-radius:50%;background:rgba(30,36,32,0.9);border:1px solid var(--gd);color:var(--g);font-size:10px;font-family:'Cinzel',serif;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.3s;box-shadow:0 2px 6px rgba(0,0,0,0.5)}
+.bg-btn:hover{background:rgba(212,184,114,0.2);border-color:var(--gl);color:var(--gl)}
+.bg-label{position:absolute;top:36px;right:8px;z-index:20;font-size:7px;letter-spacing:1px;color:var(--gd);opacity:0;display:none;background:rgba(30,36,32,0.8);padding:2px 6px;border-radius:3px;border:1px solid rgba(212,184,114,0.2)}
+.plugin-container.bg-set .bg-label{display:block;opacity:1}
+.zoom-btns{position:absolute;top:3px;right:3px;display:none;gap:2px;z-index:6}
+.upload-zone.has-img .zoom-btns{display:flex}
+.zoom-btn{width:18px;height:18px;background:rgba(30,36,32,0.9);border:1px solid var(--gd);color:var(--g);font-size:11px;font-family:'Cinzel',serif;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:2px;line-height:1;user-select:none}
+.zoom-btn:hover{background:rgba(212,184,114,0.2);color:var(--gl)}
+.upload-zone img{transition:transform 0.15s ease-out}
+.plugin-container.bg-set{background-size:cover;background-position:center;cursor:grab}
+.plugin-container.bg-set:active{cursor:grabbing}
+.plugin-container.bg-set::after{content:'';position:absolute;inset:0;background:rgba(10,14,11,0.65);pointer-events:none;z-index:0}
+.plugin-container.bg-set .main-layout,.plugin-container.bg-set .header{position:relative;z-index:1}
+/* Piano Keyboard */
+.piano-wrap{width:1100px;background:linear-gradient(145deg,#2f3a33f2,#1e2420fa);border:3px solid #1a211d;border-top:none;padding:10px 20px 12px;box-sizing:border-box;overflow-x:auto;overflow-y:hidden;box-shadow:0 40px 80px rgba(0,0,0,0.9),inset 0 0 30px rgba(0,0,0,0.5);position:relative}
+.piano-wrap::before{content:'';position:absolute;inset:8px 12px 10px;border:1px solid rgba(212,184,114,0.08);pointer-events:none}
+.piano-wrap::-webkit-scrollbar{height:4px}
+.piano-wrap::-webkit-scrollbar-track{background:rgba(30,36,32,0.5)}
+.piano-wrap::-webkit-scrollbar-thumb{background:rgba(212,184,114,0.3);border-radius:2px}
+.piano{border:1px solid rgba(212,184,114,0.2);border-radius:4px;overflow:hidden;background:linear-gradient(180deg,rgba(30,36,32,0.95),rgba(15,19,16,0.98));box-shadow:inset 0 2px 8px rgba(0,0,0,0.4);display:flex;height:75px;position:relative;min-width:max-content}
+.piano .w{flex:1;height:100%;background:linear-gradient(180deg,#e8e0d0,#c8bca8);border-right:1px solid rgba(30,36,32,0.3);position:relative;z-index:1;cursor:pointer;transition:all 0.08s}
+.piano .w:last-child{border-right:none}
+.piano .w:hover{background:linear-gradient(180deg,#f0e8d8,#d8ccb8)}
+.piano .w.active,.piano .w:active{background:linear-gradient(180deg,#d4b872,#b89a58);box-shadow:inset 0 2px 6px rgba(0,0,0,0.3)}
+.piano .b{position:absolute;height:65%;width:60%;background:linear-gradient(180deg,#2a302c,#0e1210);z-index:2;border-radius:0 0 3px 3px;cursor:pointer;transition:all 0.08s;border:1px solid rgba(212,184,114,0.15);border-top:none}
+.piano .b:hover{background:linear-gradient(180deg,#3a403c,#1e2220)}
+.piano .b.active,.piano .b:active{background:linear-gradient(180deg,#d4b872,#8a733b);border-color:var(--g)}
+.piano-label{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:7px;letter-spacing:3px;color:var(--gd);opacity:0.5}
+/* Locked (final view) mode */
+body.locked .bg-upload,body.locked .bg-controls,body.locked .bg-label,body.locked .zoom-btns,body.locked .slide-controls{display:none!important}
+body.locked .upload-zone,body.locked .slide-box,body.locked .slide-empty{cursor:default}
+body.locked .upload-zone img,body.locked .slide-track img,body.locked .plugin-container.bg-set{cursor:default!important}
+body.locked .upload-zone{border-color:transparent}
+body.locked .slide-box{border-color:transparent}
+body.locked .slide-nav{cursor:pointer}
+/* Slideshow */
+.slideshow-panel{background:linear-gradient(145deg,rgba(255,255,255,0.02),rgba(0,0,0,0.2));border:1px solid rgba(212,184,114,0.15);padding:10px;margin-top:10px;position:relative;z-index:2}
+.slideshow-panel::before{content:'SLIDESHOW';display:block;text-align:center;font-size:9px;letter-spacing:3px;color:var(--gd);padding-bottom:8px;border-bottom:1px solid rgba(212,184,114,0.1);margin-bottom:8px;font-weight:600}
+.slide-box{width:100%;height:130px;border:2px dashed rgba(212,184,114,0.25);border-radius:4px;overflow:hidden;position:relative;background:rgba(0,0,0,0.2);cursor:pointer;transition:all 0.3s}
+.slide-box:hover,.slide-box.dragover{border-color:rgba(212,184,114,0.6);background:rgba(212,184,114,0.05);box-shadow:0 0 15px rgba(212,184,114,0.1)}
+.slide-track{display:flex;height:100%;transition:transform 0.6s cubic-bezier(0.4,0,0.2,1)}
+.slide-track img{width:100%;height:100%;object-fit:cover;flex-shrink:0;opacity:0.9;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.slide-track img:active{cursor:grabbing}
+.slide-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--gd);cursor:pointer}
+.slide-empty .u-icon{font-size:20px;opacity:0.6;margin-bottom:4px}
+.slide-empty .u-text{font-size:8px;letter-spacing:1px;text-align:center}
+.slide-dots{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:5}
+.slide-dot{width:8px;height:8px;border-radius:50%;background:rgba(212,184,114,0.3);border:1px solid rgba(212,184,114,0.4);cursor:pointer;transition:all 0.3s}
+.slide-dot.active{background:var(--g);box-shadow:0 0 6px var(--g)}
+.slide-nav{position:absolute;top:50%;transform:translateY(-50%);width:24px;height:24px;border-radius:50%;background:rgba(30,36,32,0.85);border:1px solid var(--gd);color:var(--g);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;font-weight:700;z-index:5;opacity:0;transition:opacity 0.3s}
+.slide-box:hover .slide-nav{opacity:1}
+.slide-prev{left:6px}
+.slide-next{right:6px}
+.slide-controls{position:absolute;top:4px;right:4px;display:none;gap:3px;z-index:6}
+.slide-box.has-imgs .slide-controls{display:flex}
+.slide-cbtn{width:18px;height:18px;background:rgba(30,36,32,0.9);border:1px solid var(--gd);color:var(--g);font-size:9px;font-family:'Cinzel',serif;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:2px;line-height:1}
+.slide-cbtn:hover{background:rgba(212,184,114,0.2);color:var(--gl)}
+</style>
+</head>
+<body>
+<div class="plugin-container">
+  <label class="bg-upload" title="Upload background">
+    <input type="file" accept="image/*" onchange="handleBgUpload(this)">
+    <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-16l-5 5h3v4h4v-4h3l-5-5z"/></svg>
+  </label>
+  <div class="bg-controls">
+    <span class="bg-btn" onclick="bgZoom(-1)">-</span>
+    <span class="bg-btn" onclick="bgZoom(1)">+</span>
+  </div>
+  <div class="bg-label">Drag to pan</div>
+  <div class="header"><h1>SYNTHLEN KHMER</h1><p>TRADITIONAL INSTRUMENT PLUGIN</p></div>
+  <div class="side-l">PERCUSSION / RHYTHM</div>
+  <div class="side-r">SOUND SELECTION</div>
+
+  <div class="main-layout">
+    <div class="panel" style="display:flex;flex-direction:column;align-items:center">
+      <div class="sec-title">FILTER</div>
+      <div class="knob-row">
+        <div class="knob-c"><div class="knob" data-param="resonance"><div class="knob-i"></div></div><div class="knob-l">RESONANCE</div><div class="knob-sub">(Tror)</div></div>
+        <div class="knob-c"><div class="knob" data-param="cutoff"><div class="knob-i"></div></div><div class="knob-l">CUTOFF</div><div class="knob-sub">(Roneat)</div></div>
+      </div>
+      <div class="knob-row">
+        <div class="knob-c"><div class="knob" data-param="delay"><div class="knob-i"></div></div><div class="knob-l">DELAY</div></div>
+        <div class="knob-c"><div class="knob" data-param="reverb"><div class="knob-i"></div></div><div class="knob-l">REVERB</div></div>
+        <div class="knob-c"><div class="knob" data-param="pitch"><div class="knob-i"></div></div><div class="knob-l">PITCH</div></div>
+      </div>
+      <div class="inst" style="width:100%;margin-top:auto">
+        <div class="upload-zone" data-target="roneat" onclick="zoneClick(event,this)">
+          <input type="file" accept="image/*" onchange="handleUpload(this)">
+          <div class="u-icon">&#8593;</div>
+          <div class="u-text">Drop image or click<br>Khim</div>
+          <div class="zoom-btns"><span class="zoom-btn" onclick="event.preventDefault();event.stopPropagation();zoomImg(this.closest('.upload-zone'),-1)">-</span><span class="zoom-btn" onclick="event.preventDefault();event.stopPropagation();zoomImg(this.closest('.upload-zone'),1)">+</span></div>
+        </div>
+        <div class="inst-l">Khim</div>
+      </div>
+      <div class="chayam-zone">
+        <div class="upload-zone" data-target="chayam" onclick="zoneClick(event,this)">
+          <input type="file" accept="image/*" onchange="handleUpload(this)">
+          <div class="u-icon">&#8593;</div>
+          <div class="u-text">Drop image or click<br>Kong Vong Thom</div>
+          <div class="zoom-btns"><span class="zoom-btn" onclick="event.preventDefault();event.stopPropagation();zoomImg(this.closest('.upload-zone'),-1)">-</span><span class="zoom-btn" onclick="event.preventDefault();event.stopPropagation();zoomImg(this.closest('.upload-zone'),1)">+</span></div>
+        </div>
+        <div class="inst-l">Kong Vong Thom</div>
+      </div>
+    </div>
+
+    <div class="center">
+      <div class="scr-f"><div class="scr"><div class="scr-t" id="presetName">Ta Khe</div><svg class="angkor" viewBox="0 0 400 140" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="132" width="400" height="8"/><rect x="20" y="124" width="360" height="8"/><rect x="32" y="112" width="336" height="12"/><polygon points="166,124 166,96 174,96 174,64 183,64 183,36 192,36 200,6 208,36 217,36 217,64 226,64 226,96 234,96 234,124"/><polygon points="92,124 92,100 98,100 98,78 105,78 105,56 112,56 118,38 124,56 131,56 131,78 138,78 138,100 144,100 144,124"/><polygon points="256,124 256,100 262,100 262,78 269,78 269,56 276,56 282,38 288,56 295,56 295,78 302,78 302,100 308,100 308,124"/><polygon points="28,124 28,104 33,104 33,88 39,88 39,74 44,74 48,64 52,74 57,74 57,88 63,88 63,104 68,104 68,124"/><polygon points="332,124 332,104 337,104 337,88 343,88 343,74 348,74 352,64 356,74 361,74 361,88 367,88 367,104 372,104 372,124"/></svg></div></div>
+      <div class="fx"><div class="fx-t">MULTI-EFFECT</div><div class="fx-btns"><div class="fx-btn" data-fx="fxReverb" onclick="toggleFx(this)">Reverb</div><div class="fx-btn" data-fx="fxDelay" onclick="toggleFx(this)">Delay</div><div class="fx-btn" data-fx="fxPitch" onclick="toggleFx(this)">Pitch</div></div>
+          <div class="pt"><div class="pt-t">PRESET</div><div class="pt-l"></div></div>
+        </div>
+    </div>
+
+    <div class="panel" style="display:flex;flex-direction:column;align-items:center">
+      <div class="sec-title">ENVELOPE</div>
+      <div class="knob-row">
+        <div class="knob-c"><div class="knob" data-param="master"><div class="knob-i"></div></div><div class="knob-l">MASTER</div></div>
+      </div>
+      <div class="knob-row">
+        <div class="knob-c"><div class="knob" data-param="attack"><div class="knob-i"></div></div><div class="knob-l">ATTACK</div></div>
+        <div class="knob-c"><div class="knob" data-param="decay"><div class="knob-i"></div></div><div class="knob-l">DECAY</div></div>
+        <div class="knob-c"><div class="knob" data-param="release"><div class="knob-i"></div></div><div class="knob-l">RELEASE</div></div>
+      </div>
+      <div class="bottom">
+        <div class="inst">
+          <div class="upload-zone" data-target="tror" onclick="zoneClick(event,this)">
+            <input type="file" accept="image/*" onchange="handleUpload(this)">
+            <div class="u-icon">&#8593;</div>
+            <div class="u-text">Drop image or click<br>Tro Che</div>
+            <div class="zoom-btns"><span class="zoom-btn" onclick="event.preventDefault();event.stopPropagation();zoomImg(this.closest('.upload-zone'),-1)">-</span><span class="zoom-btn" onclick="event.preventDefault();event.stopPropagation();zoomImg(this.closest('.upload-zone'),1)">+</span></div>
+          </div>
+          <div class="inst-l">Tro Che</div>
+        </div>
+        <div class="inst">
+          <div class="upload-zone" data-target="pin" onclick="zoneClick(event,this)">
+            <input type="file" accept="image/*" onchange="handleUpload(this)">
+            <div class="u-icon">&#8593;</div>
+            <div class="u-text">Drop image or click<br>Tro Sao</div>
+            <div class="zoom-btns"><span class="zoom-btn" onclick="event.preventDefault();event.stopPropagation();zoomImg(this.closest('.upload-zone'),-1)">-</span><span class="zoom-btn" onclick="event.preventDefault();event.stopPropagation();zoomImg(this.closest('.upload-zone'),1)">+</span></div>
+          </div>
+          <div class="inst-l">Tro Sao</div>
+        </div>
+      </div>
+      <div class="slideshow-panel" style="margin-top:10px;width:100%">
+        <div class="slide-box" id="slideBox" onclick="slideClick(event)">
+          <input type="file" accept="image/*" multiple id="slideInput" onchange="handleSlideUpload(this)" style="display:none">
+          <div class="slide-empty" id="slideEmpty" onclick="event.stopPropagation();document.getElementById('slideInput').click()"><div class="u-icon">&#8593;</div><div class="u-text">Drop images or click<br>Upload multiple</div></div>
+          <div class="slide-track" id="slideTrack"></div>
+          <div class="slide-dots" id="slideDots"></div>
+          <div class="slide-nav slide-prev" onclick="event.stopPropagation();slidePrev()">&#9664;</div>
+          <div class="slide-nav slide-next" onclick="event.stopPropagation();slideNext()">&#9654;</div>
+          <div class="slide-controls">
+            <span class="slide-cbtn" onclick="event.stopPropagation();slideZoom(-1)">-</span>
+            <span class="slide-cbtn" onclick="event.stopPropagation();slideZoom(1)">+</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="aps al"><svg viewBox="0 0 40 75"><path d="M20 8 Q24 4 28 10 Q26 16 22 18" stroke="rgba(212,184,114,0.5)" stroke-width="1" fill="none"/><path d="M20 18 Q12 26 10 38 Q12 50 20 58 Q28 50 30 38 Q28 26 20 18" stroke="rgba(212,184,114,0.5)" stroke-width="1.2" fill="none"/><path d="M12 30 Q6 34 8 42" stroke="rgba(212,184,114,0.4)" stroke-width="1" fill="none"/><path d="M28 30 Q34 34 32 42" stroke="rgba(212,184,114,0.4)" stroke-width="1" fill="none"/></svg></div>
+  <div class="aps ar"><svg viewBox="0 0 40 75"><use href="#aps-def"/></svg></div>
+  <div class="logo"><svg viewBox="0 0 60 60"><defs><linearGradient id="lg"><stop offset="0%" stop-color="#d4b872"/><stop offset="100%" stop-color="#8a733b"/></linearGradient></defs><circle cx="30" cy="30" r="26" fill="none" stroke="url(#lg)" stroke-width="2"/><circle cx="30" cy="30" r="20" fill="none" stroke="url(#lg)" stroke-width="1" opacity="0.6"/><text x="30" y="28" text-anchor="middle" fill="var(--g)" font-size="8" font-family="Cinzel" font-weight="700" letter-spacing="1">SYNTHLEN</text><text x="30" y="38" text-anchor="middle" fill="var(--g)" font-size="8" font-family="Cinzel" font-weight="700" letter-spacing="1">KHMER</text></svg></div>
+</div>
+
+<div class="piano-wrap">
+  <div class="piano-label">VIRTUAL KEYS</div>
+  <div class="piano" id="piano"></div>
+</div>
+
+<script>
+// ===== LOCK MODE =====
+// កំណត់ true ដើម្បី Lock design (មិនអាច upload/drag/zoom)។ កំណត់ false ដើម្បីកែវិញ។
+const LOCKED = true;
+if(LOCKED)document.body.classList.add('locked');
+
+// Knobs (-135..135 deg maps to normalised 0..1)
+document.querySelectorAll('.knob').forEach(k=>{
+  let a=-135;const i=k.querySelector('.knob-i');
+  const draw=()=>{i.style.transform='rotate('+a+'deg)'};
+  // Allow external (JUCE) code to set the knob from a normalised value.
+  k._setNorm=n=>{a=-135+Math.max(0,Math.min(1,n))*270;draw()};
+  draw();
+  k.addEventListener('mousedown',e=>{
+    let d=true,sy=e.clientY,sa=a;
+    const m=ev=>{if(!d)return;a=Math.min(135,Math.max(-135,sa+(sy-ev.clientY)*2));draw();
+      if(window.__onKnob&&k.dataset.param)window.__onKnob(k.dataset.param,(a+135)/270);};
+    const u=()=>{d=false;document.removeEventListener('mousemove',m);document.removeEventListener('mouseup',u)};
+    document.addEventListener('mousemove',m);document.addEventListener('mouseup',u);
+  });
+})
+
+// ===== Backend API helpers =====
+function postFile(url,file,name){
+  const fd=new FormData();fd.append('image',file,name);return fetch(url,{method:'POST',body:fd});
+}
+function postFiles(url,files){
+  const fd=new FormData();files.forEach(f=>fd.append('images',f));return fetch(url,{method:'POST',body:fd});
+}
+
+// ===== Instrument upload (saved to server disk) =====
+function handleUpload(input){
+  const file=input.files[0];if(!file)return;
+  const zone=input.closest('.upload-zone');
+  const target=zone.dataset.target;
+  postFile('/api/upload/'+target,file,file.name).then(r=>r.json()).then(data=>{
+    if(!data.success)return;
+    let img=zone.querySelector('img');
+    if(!img){
+      img=document.createElement('img');zone.appendChild(img);zone.classList.add('has-img');
+      const ic=zone.querySelector('.u-icon'),tx=zone.querySelector('.u-text');
+      if(ic)ic.style.display='none';if(tx)tx.style.display='none';
+      attachPan(img);
+    }
+    img.src=data.url+'?t='+Date.now();
+    img.dataset.scale='1';img.dataset.dx='0';img.dataset.dy='0';
+    setTransform(img);
+    localStorage.setItem('sk_'+target+'_zoom','1');
+    localStorage.setItem('sk_'+target+'_dx','0');
+    localStorage.setItem('sk_'+target+'_dy','0');
+  });
+}
+
+function setTransform(img){
+  const s=parseFloat(img.dataset.scale||'1');
+  const dx=parseFloat(img.dataset.dx||'0');
+  const dy=parseFloat(img.dataset.dy||'0');
+  img.style.transform='translate('+dx+'px,'+dy+'px) scale('+s+')';
+}
+
+function zoomImg(zone,dir){
+  if(LOCKED)return;
+  const img=zone.querySelector('img');if(!img)return;
+  let s=parseFloat(img.dataset.scale||'1');
+  s=Math.max(0.3,Math.min(4,s+dir*0.1));
+  img.dataset.scale=s;
+  setTransform(img);
+  localStorage.setItem('sk_'+zone.dataset.target+'_zoom',String(s));
+}
+
+function attachPan(img){
+  if(LOCKED)return;
+  function startDrag(cx,cy){
+    const sx=cx,sy=cy;
+    const sdx=parseFloat(img.dataset.dx||'0');
+    const sdy=parseFloat(img.dataset.dy||'0');
+    img.classList.add('dragging');
+    function onMove(ev){img.dataset.dx=String(sdx+(ev.clientX-sx));img.dataset.dy=String(sdy+(ev.clientY-sy));setTransform(img);}
+    function onUp(){img.classList.remove('dragging');document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);document.removeEventListener('touchmove',onTouchMove);document.removeEventListener('touchend',onUp);const t=img.closest('.upload-zone').dataset.target;localStorage.setItem('sk_'+t+'_dx',img.dataset.dx);localStorage.setItem('sk_'+t+'_dy',img.dataset.dy);}
+    function onTouchMove(ev){ev.preventDefault();const tch=ev.touches[0];img.dataset.dx=String(sdx+(tch.clientX-sx));img.dataset.dy=String(sdy+(tch.clientY-sy));setTransform(img);}
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+    document.addEventListener('touchmove',onTouchMove,{passive:false});
+    document.addEventListener('touchend',onUp);
+  }
+  img.addEventListener('mousedown',function(e){if(e.button!==0)return;e.preventDefault();e.stopPropagation();startDrag(e.clientX,e.clientY);});
+  img.addEventListener('touchstart',function(e){e.preventDefault();e.stopPropagation();const tch=e.touches[0];startDrag(tch.clientX,tch.clientY);},{passive:false});
+}
+
+function zoneClick(ev,zone){
+  if(LOCKED)return;
+  if(ev.target.tagName==='IMG'||ev.target.classList.contains('zoom-btn'))return;
+  const input=zone.querySelector('input[type=file]');
+  if(input)input.click();
+}
+
+// Restore instrument images from SERVER (fetch manifest)
+function initImages(){
+  fetch('/api/manifest').then(r=>r.json()).then(data=>{
+    ['roneat','chayam','tror','pin'].forEach(t=>{
+      const url=data.instruments[t];if(!url)return;
+      const zone=document.querySelector('.upload-zone[data-target="'+t+'"]');if(!zone)return;
+      let img=zone.querySelector('img');
+      if(!img){
+        img=document.createElement('img');zone.appendChild(img);zone.classList.add('has-img');
+        const ic=zone.querySelector('.u-icon'),tx=zone.querySelector('.u-text');
+        if(ic)ic.style.display='none';if(tx)tx.style.display='none';
+        attachPan(img);
+      }
+      img.src=url;
+      img.dataset.scale=localStorage.getItem('sk_'+t+'_zoom')||'1';
+      img.dataset.dx=localStorage.getItem('sk_'+t+'_dx')||'0';
+      img.dataset.dy=localStorage.getItem('sk_'+t+'_dy')||'0';
+      setTransform(img);
+    });
+  });
+}
+initImages();
+
+document.querySelectorAll('.upload-zone').forEach(z=>{
+  z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('dragover')});
+  z.addEventListener('dragleave',()=>z.classList.remove('dragover'));
+  z.addEventListener('drop',e=>{e.preventDefault();z.classList.remove('dragover');if(LOCKED)return;const file=e.dataTransfer.files[0];if(file&&file.type.startsWith('image/')){const input=z.querySelector('input');handleUpload(input)}});
+});
+
+// ===== Background upload (saved to server disk) =====
+function bgSetTransform(pc){
+  const s=parseFloat(pc.dataset.bgScale||'1');
+  const dx=parseFloat(pc.dataset.bgDx||'0');
+  const dy=parseFloat(pc.dataset.bgDy||'0');
+  pc.style.backgroundSize=(s*100)+'%';
+  pc.style.backgroundPosition='calc(50% + '+dx+'px) calc(50% + '+dy+'px)';
+}
+function bgZoom(dir){
+  if(LOCKED)return;
+  const pc=document.querySelector('.plugin-container');
+  let s=parseFloat(pc.dataset.bgScale||'1');
+  s=Math.max(0.5,Math.min(5,s+dir*0.15));
+  pc.dataset.bgScale=String(s);
+  bgSetTransform(pc);
+  localStorage.setItem('sk_bg_scale',String(s));
+}
+function handleBgUpload(input){
+  if(LOCKED)return;
+  const file=input.files[0];if(!file)return;
+  postFile('/api/upload-bg',file,file.name).then(r=>r.json()).then(data=>{
+    if(!data.success)return;
+    const pc=document.querySelector('.plugin-container');
+    pc.style.backgroundImage='url('+data.url+'?t='+Date.now()+')';
+    pc.classList.add('bg-set');
+    pc.dataset.bgScale='1';pc.dataset.bgDx='0';pc.dataset.bgDy='0';
+    bgSetTransform(pc);
+    localStorage.setItem('sk_bg_scale','1');
+    localStorage.setItem('sk_bg_dx','0');
+    localStorage.setItem('sk_bg_dy','0');
+    attachBgPan(pc);
+  });
+}
+function attachBgPan(pc){
+  if(LOCKED)return;
+  if(pc._bgPanAttached)return;pc._bgPanAttached=true;
+  pc.addEventListener('mousedown',function(e){
+    if(e.target.closest('.bg-upload')||e.target.closest('.bg-controls')||e.target.closest('.zoom-btns')||e.target.closest('.bg-btn'))return;
+    e.preventDefault();
+    const sx=e.clientX,sy=e.clientY;
+    const sdx=parseFloat(pc.dataset.bgDx||'0');
+    const sdy=parseFloat(pc.dataset.bgDy||'0');
+    function onMove(ev){
+      pc.dataset.bgDx=String(sdx+(ev.clientX-sx));
+      pc.dataset.bgDy=String(sdy+(ev.clientY-sy));
+      bgSetTransform(pc);
+    }
+    function onUp(){
+      document.removeEventListener('mousemove',onMove);
+      document.removeEventListener('mouseup',onUp);
+      localStorage.setItem('sk_bg_dx',pc.dataset.bgDx);
+      localStorage.setItem('sk_bg_dy',pc.dataset.bgDy);
+    }
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+  });
+}
+function initBg(){
+  fetch('/api/manifest').then(r=>r.json()).then(data=>{
+    if(!data.background)return;
+    const pc=document.querySelector('.plugin-container');
+    pc.style.backgroundImage='url('+data.background+')';
+    pc.classList.add('bg-set');
+    pc.dataset.bgScale=localStorage.getItem('sk_bg_scale')||'1';
+    pc.dataset.bgDx=localStorage.getItem('sk_bg_dx')||'0';
+    pc.dataset.bgDy=localStorage.getItem('sk_bg_dy')||'0';
+    bgSetTransform(pc);
+    attachBgPan(pc);
+  });
+}
+initBg();
+
+// ===== Slideshow (saved to server disk) =====
+let slideIndex=0,slideImages=[],slideInterval=null,slideStates=[];
+function getSlideState(i){if(!slideStates[i])slideStates[i]={s:1,dx:0,dy:0};return slideStates[i]}
+function setSlideTransform(img,i){const st=getSlideState(i);img.style.transform='translate('+st.dx+'px,'+st.dy+'px) scale('+st.s+')';}
+function attachSlidePan(img,i){
+  if(LOCKED)return;
+  function startDrag(cx,cy){
+    const sx=cx,sy=cy;
+    const st=getSlideState(i);
+    const sdx=st.dx,sdy=st.dy;
+    img.classList.add('dragging');
+    function onMove(ev){st.dx=sdx+(ev.clientX-sx);st.dy=sdy+(ev.clientY-sy);setSlideTransform(img,i);}
+    function onUp(){img.classList.remove('dragging');document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);document.removeEventListener('touchmove',onTouchMove);document.removeEventListener('touchend',onUp);localStorage.setItem('sk_slide_states',JSON.stringify(slideStates));}
+    function onTouchMove(ev){ev.preventDefault();const tch=ev.touches[0];st.dx=sdx+(tch.clientX-sx);st.dy=sdy+(tch.clientY-sy);setSlideTransform(img,i);}
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+    document.addEventListener('touchmove',onTouchMove,{passive:false});
+    document.addEventListener('touchend',onUp);
+  }
+  img.addEventListener('mousedown',function(e){if(e.button!==0)return;e.preventDefault();e.stopPropagation();startDrag(e.clientX,e.clientY);});
+  img.addEventListener('touchstart',function(e){e.preventDefault();e.stopPropagation();const tch=e.touches[0];startDrag(tch.clientX,tch.clientY);},{passive:false});
+}
+function handleSlideUpload(input){
+  if(LOCKED)return;
+  const files=Array.from(input.files);if(!files.length)return;
+  postFiles('/api/upload-slides',files).then(r=>r.json()).then(data=>{
+    if(!data.success)return;
+    slideImages=slideImages.concat(data.urls);
+    data.urls.forEach(()=>slideStates.push({s:1,dx:0,dy:0}));
+    renderSlides();startSlideTimer();
+  });
+}
+function renderSlides(){
+  const track=document.getElementById('slideTrack');
+  const dots=document.getElementById('slideDots');
+  const empty=document.getElementById('slideEmpty');
+  const box=document.getElementById('slideBox');
+  track.innerHTML='';dots.innerHTML='';
+  if(!slideImages.length){empty.style.display='flex';box.classList.remove('has-imgs');return}
+  empty.style.display='none';box.classList.add('has-imgs');
+  slideImages.forEach((src,i)=>{
+    const img=document.createElement('img');img.src=src;setSlideTransform(img,i);track.appendChild(img);
+    attachSlidePan(img,i);
+    const dot=document.createElement('span');dot.className='slide-dot'+(i===slideIndex?' active':'');
+    dot.onclick=e=>{e.stopPropagation();goToSlide(i)};
+    dots.appendChild(dot);
+  });
+  updateSlidePos();
+}
+function updateSlidePos(){
+  const track=document.getElementById('slideTrack');
+  track.style.transform='translateX(-'+(slideIndex*100)+'%)';
+  document.querySelectorAll('.slide-dot').forEach((d,i)=>d.classList.toggle('active',i===slideIndex));
+}
+function goToSlide(i){
+  slideIndex=i;
+  if(slideIndex<0)slideIndex=slideImages.length-1;
+  if(slideIndex>=slideImages.length)slideIndex=0;
+  updateSlidePos();resetSlideTimer();
+}
+function slideNext(){goToSlide(slideIndex+1)}
+function slidePrev(){goToSlide(slideIndex-1)}
+function startSlideTimer(){if(slideInterval)clearInterval(slideInterval);slideInterval=setInterval(slideNext,3000)}
+function resetSlideTimer(){clearInterval(slideInterval);slideInterval=setInterval(slideNext,3000)}
+function slideZoom(dir){
+  if(LOCKED)return;
+  const st=getSlideState(slideIndex);
+  st.s=Math.max(0.5,Math.min(3,st.s+dir*0.1));
+  const imgs=document.querySelectorAll('#slideTrack img');
+  if(imgs[slideIndex])setSlideTransform(imgs[slideIndex],slideIndex);
+  localStorage.setItem('sk_slide_states',JSON.stringify(slideStates));
+}
+function slideClick(ev){if(LOCKED)return;if(ev.target.closest('.slide-nav')||ev.target.closest('.slide-controls')||ev.target.closest('.slide-dot'))return;document.getElementById('slideInput').click()}
+function initSlides(){
+  fetch('/api/manifest').then(r=>r.json()).then(data=>{
+    if(!data.slideshow||!data.slideshow.length)return;
+    slideImages=data.slideshow;
+    const saved=localStorage.getItem('sk_slide_states');
+    slideStates=saved?JSON.parse(saved):slideImages.map(()=>({s:1,dx:0,dy:0}));
+    if(slideStates.length<slideImages.length){for(let i=slideStates.length;i<slideImages.length;i++)slideStates.push({s:1,dx:0,dy:0})}
+    renderSlides();startSlideTimer();
+  });
+}
+initSlides();
+
+document.getElementById('slideBox').addEventListener('dragover',e=>{e.preventDefault();document.getElementById('slideBox').classList.add('dragover')});
+document.getElementById('slideBox').addEventListener('dragleave',e=>{document.getElementById('slideBox').classList.remove('dragover')});
+document.getElementById('slideBox').addEventListener('drop',e=>{
+  e.preventDefault();
+  document.getElementById('slideBox').classList.remove('dragover');
+  if(LOCKED)return;
+  const files=Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/'));
+  if(!files.length)return;
+  postFiles('/api/upload-slides',files).then(r=>r.json()).then(data=>{
+    if(!data.success)return;
+    slideImages=slideImages.concat(data.urls);
+    renderSlides();startSlideTimer();
+  });
+});
+
+// ===== Multi-Effect buttons =====
+function toggleFx(btn){btn.classList.toggle('on');const on=btn.classList.contains('on');if(window.__onFx&&btn.dataset.fx)window.__onFx(btn.dataset.fx,on);}
+
+// ===== Preset list drag-to-scroll =====
+(function(){
+  const list=document.querySelector('.pt-l');
+  if(!list)return;
+  let isDown=false,startY=0,startScroll=0,moved=false;
+  list.addEventListener('pointerdown',e=>{
+    if(e.target.classList.contains('pt-a'))return;
+    isDown=true;moved=false;startY=e.clientY;startScroll=list.scrollTop;
+    list.classList.add('dragging');list.setPointerCapture(e.pointerId);
+  });
+  list.addEventListener('pointermove',e=>{
+    if(!isDown)return;
+    const dy=e.clientY-startY;
+    if(Math.abs(dy)>3)moved=true;
+    list.scrollTop=startScroll-dy;
+  });
+  list.addEventListener('pointerup',e=>{
+    isDown=false;list.classList.remove('dragging');
+    if(moved)e.preventDefault();
+  });
+  list.addEventListener('wheel',e=>{
+    list.scrollTop+=e.deltaY;e.preventDefault();
+  },{passive:false});
+})();
+
+// ===== Preset selection =====
+function selectPreset(el){
+  document.querySelectorAll('.pt-l [data-preset]').forEach(d=>d.classList.remove('active'));
+  el.classList.add('active');
+  const name=el.dataset.preset;
+  // Reflect the preset name on the screen title.
+  const t=document.querySelector('.scr-t');if(t)t.textContent=name;
+  if(window.__onPreset)window.__onPreset(name);
+}
+
+// ===== Piano Keyboard (A1-C7, Kontakt-style scrollable) =====
+(function buildPiano(){
+  const piano=document.getElementById('piano');
+  if(!piano)return;
+  // Kontakt-style range: A1 .. C7 (MIDI 33 .. 96)
+  const startMidi=33; // A1
+  const endMidi=96;   // C7
+  const noteNames=['C','Cs','D','Ds','E','F','Fs','G','Gs','A','As','B'];
+
+  function noteName(midi){ const octave=Math.floor(midi/12)-1; return noteNames[midi%12]+octave; }
+  const isWhite=n=>noteNames[n%12].length===1;
+
+  let totalWhite=0;
+  for(let m=startMidi;m<=endMidi;++m) if(isWhite(m)) ++totalWhite;
+  const wWidth=100/totalWhite;
+  let whiteCount=0;
+
+  for(let midi=startMidi;midi<=endMidi;++midi){
+    if(isWhite(midi)){
+      const w=document.createElement('div');w.className='w';
+      w.dataset.note=noteName(midi);w.style.minWidth='24px';
+      piano.appendChild(w);++whiteCount;
+    } else {
+      const b=document.createElement('div');b.className='b';
+      b.dataset.note=noteName(midi);
+      b.style.left=((whiteCount-1)+0.65)*wWidth+'%';
+      b.style.width=(wWidth*0.6)+'%';
+      piano.appendChild(b);
+    }
+  }
+  // Convert a note name like "C2" / "Cs3" to a MIDI note number.
+  const noteMap={C:0,Cs:1,D:2,Ds:3,E:4,F:5,Fs:6,G:7,Gs:8,A:9,As:10,B:11};
+  function midiOf(note){const name=note.slice(0,-1);const oct=parseInt(note.slice(-1),10);return (oct+1)*12+noteMap[name];}
+  function press(k){if(k._on)return;k._on=true;k.classList.add('active');if(window.__noteOn)window.__noteOn(midiOf(k.dataset.note));}
+  function release(k){if(!k._on)return;k._on=false;k.classList.remove('active');if(window.__noteOff)window.__noteOff(midiOf(k.dataset.note));}
+  piano.querySelectorAll('.w,.b').forEach(k=>{
+    k.addEventListener('mousedown',e=>{e.preventDefault();press(k)});
+    k.addEventListener('mouseup',e=>{e.preventDefault();release(k)});
+    k.addEventListener('mouseleave',()=>release(k));
+    k.addEventListener('touchstart',e=>{e.preventDefault();press(k)},{passive:false});
+    k.addEventListener('touchend',e=>{e.preventDefault();release(k)},{passive:false});
+  });
+})();
+</script>
+
+<!-- ===== JUCE backend bindings (active only inside the VST WebView) ===== -->
+<script>
+// window.__JUCE__ is injected by JUCE's WebBrowserComponent. In a normal
+// browser it is undefined, so the design keeps working standalone.
+if (window.__JUCE__) {
+  import('./js/juce/index.js').then((Juce) => {
+    // --- Knobs / FX buttons -> parameters -------------------------------
+    const sliderParams = ['resonance','cutoff','delay','reverb','pitch','attack','decay','release','master'];
+    const sliderStates = {};
+    sliderParams.forEach((id) => {
+      const st = Juce.getSliderState(id);
+      sliderStates[id] = st;
+      // Initialise the on-screen knob from the parameter's current value.
+      const knob = document.querySelector('.knob[data-param="'+id+'"]');
+      if (knob && knob._setNorm) knob._setNorm(st.getNormalisedValue());
+      // Keep knob in sync if the host/DAW changes the parameter.
+      st.valueChangedEvent.addListener(() => {
+        if (knob && knob._setNorm) knob._setNorm(st.getNormalisedValue());
+      });
+    });
+    // When the user turns a knob, push the value to the parameter.
+    window.__onKnob = (id, norm) => {
+      const st = sliderStates[id];
+      if (st) { st.setNormalisedValue(norm); }
+    };
+
+    const toggleStates = {};
+    ['fxReverb','fxDelay','fxPitch'].forEach((id) => {
+      const st = Juce.getToggleState(id);
+      toggleStates[id] = st;
+      const btn = document.querySelector('.fx-btn[data-fx="'+id+'"]');
+      const sync = () => { if (btn) btn.classList.toggle('on', st.getValue()); };
+      sync();
+      st.valueChangedEvent.addListener(sync);
+    });
+    window.__onFx = (id, on) => {
+      const st = toggleStates[id];
+      if (st) st.setValue(on);
+    };
+
+    // --- Piano keys -> MIDI ---------------------------------------------
+    const pianoNote = Juce.getNativeFunction('pianoNote');
+    window.__noteOn  = (midi) => pianoNote(true,  midi, 0.85);
+    window.__noteOff = (midi) => pianoNote(false, midi, 0.0);
+
+    // --- Preset list -> sound bank --------------------------------------
+    const selectPresetFn = Juce.getNativeFunction('selectPreset');
+    window.__onPreset = (name) => selectPresetFn(name);
+
+    // Build the preset list from the bank folders found on disk.
+    const getPresetNamesFn = Juce.getNativeFunction('getPresetNames');
+    getPresetNamesFn().then((names) => {
+      const list = document.querySelector('.pt-l');
+      if (!list || !names || !names.length) return;
+      list.innerHTML = '';
+      names.forEach((n, i) => {
+        const d = document.createElement('div');
+        d.className = 'pt-a' + (i === 0 ? ' active' : '');
+        d.dataset.preset = n;
+        d.textContent = n;
+        d.onclick = function(){ selectPreset(this); };
+        list.appendChild(d);
+      });
+      const t = document.querySelector('.scr-t');
+      if (t) t.textContent = names[0];
+      selectPresetFn(names[0]);
+    }).catch((err) => console.error('getPresetNames failed:', err));
+
+    // --- Fit the plugin window to the content (desktop-app feel) --------
+    const resizeEditor = Juce.getNativeFunction('resizeEditor');
+    function fitWindow() {
+      // Allow scrolling while measuring, then lock it once sized.
+      document.documentElement.style.overflow = 'auto';
+      const w = Math.max(document.documentElement.scrollWidth, document.body.scrollWidth);
+      const h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+      resizeEditor(w, h);
+      // Lock so it stays still like a desktop app (no scroll / no bounce).
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+    }
+    // Run after layout settles, fonts/images load, and slideshow renders.
+    setTimeout(fitWindow, 250);
+    setTimeout(fitWindow, 900);
+    window.addEventListener('load', () => setTimeout(fitWindow, 300));
+  }).catch((err) => console.error('JUCE bindings failed:', err));
+}
+</script>
+</body>
+</html>

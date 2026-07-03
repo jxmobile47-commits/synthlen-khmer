@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synthlen Khmer - Sample Scanner</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap');
+:root { --g:#d4b872; --gl:#f2db98; --gd:#8a733b; --s:#1e2420; --sm:#2f3a33; }
+*{box-sizing:border-box;margin:0}
+body{background:#0a0c0b;font-family:'Inter',sans-serif;color:#e8e0d0;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px}
+.container{width:900px;max-width:100%;background:linear-gradient(145deg,#2f3a33f2,#1e2420fa);border:3px solid #1a211d;box-shadow:0 40px 80px rgba(0,0,0,0.9);padding:40px;position:relative}
+.container::before{content:'';position:absolute;inset:8px;border:2px solid var(--gd);opacity:0.4;pointer-events:none}
+.header{text-align:center;margin-bottom:30px;position:relative;z-index:1}
+.header h1{font-family:'Cinzel',serif;font-size:28px;letter-spacing:4px;color:var(--gl);text-shadow:0 2px 4px rgba(0,0,0,0.8)}
+.header p{font-size:12px;color:var(--gd);margin-top:8px;letter-spacing:1px}
+.dropzone{border:3px dashed rgba(212,184,114,0.3);border-radius:8px;padding:60px 20px;text-align:center;cursor:pointer;transition:all 0.3s;background:rgba(0,0,0,0.15);position:relative;z-index:1}
+.dropzone:hover,.dropzone.dragover{border-color:var(--g);background:rgba(212,184,114,0.05)}
+.dropzone .icon{font-size:48px;color:var(--g);margin-bottom:15px;opacity:0.7}
+.dropzone h3{font-size:18px;color:var(--gl);margin-bottom:8px;font-family:'Cinzel',serif}
+.dropzone p{font-size:13px;color:var(--gd)}
+input[type=file]{display:none}
+.controls{display:flex;gap:15px;justify-content:center;margin:20px 0;position:relative;z-index:1;flex-wrap:wrap}
+.btn{font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;padding:10px 22px;background:linear-gradient(145deg,#d4b872,#8a733b);color:#1a1e1b;border:none;border-radius:3px;cursor:pointer;font-weight:700;transition:all 0.25s;box-shadow:0 2px 6px rgba(0,0,0,0.4)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(212,184,114,0.2)}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.btn-sec{background:linear-gradient(145deg,#252b27,#1a1e1b);color:var(--g);border:1px solid rgba(212,184,114,0.3)}
+.settings{background:rgba(0,0,0,0.2);border:1px solid rgba(212,184,114,0.15);border-radius:6px;padding:20px;margin-bottom:20px;position:relative;z-index:1}
+.settings h3{font-family:'Cinzel',serif;font-size:14px;letter-spacing:2px;color:var(--g);margin-bottom:15px}
+.setting-row{display:flex;gap:30px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.setting-row label{font-size:13px;color:var(--gl);min-width:140px}
+.setting-row input,.setting-row select{background:rgba(0,0,0,0.3);border:1px solid rgba(212,184,114,0.2);color:var(--gl);padding:8px 12px;border-radius:3px;font-size:13px}
+.setting-row input{width:250px;max-width:100%}
+.results{position:relative;z-index:1;max-height:400px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:12px 10px;text-align:left;border-bottom:1px solid rgba(212,184,114,0.1)}
+th{font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--g);background:rgba(0,0,0,0.2);position:sticky;top:0}
+td{color:#e8e0d0}
+.note-cell{font-weight:700;color:var(--gl);font-size:15px}
+.conf-high{color:#7ee787}
+.conf-med{color:#f2db98}
+.conf-low{color:#f87171}
+.status{text-align:center;padding:30px;color:var(--gd);font-size:13px}
+.progress{position:relative;z-index:1;margin:15px 0;height:4px;background:rgba(0,0,0,0.3);border-radius:2px;overflow:hidden;display:none}
+.progress-bar{height:100%;background:var(--g);width:0%;transition:width 0.3s}
+.footer{text-align:center;margin-top:20px;font-size:11px;color:var(--gd);position:relative;z-index:1}
+.original-name{font-size:12px;color:var(--gd);word-break:break-all}
+.confidence{font-size:11px}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>SAMPLE SCANNER</h1>
+    <p>Detect root note & auto-rename WAV files for Synthlen Khmer</p>
+  </div>
+
+  <div class="dropzone" id="dropzone">
+    <div class="icon">&#9836;</div>
+    <h3>Drop WAV files here</h3>
+    <p>Or click to select files</p>
+    <input type="file" id="fileInput" accept=".wav,.aif,.aiff,.flac" multiple>
+  </div>
+
+  <div class="progress" id="progress"><div class="progress-bar" id="progressBar"></div></div>
+
+  <div class="settings">
+    <h3>RENAME FORMAT</h3>
+    <div class="setting-row">
+      <label>Format</label>
+      <select id="format">
+        <option value="{note}">{note}.wav</option>
+        <option value="{note}_v127">{note}_v127.wav</option>
+        <option value="sample_{note}">sample_{note}.wav</option>
+        <option value="{prefix}{note}">{prefix}{note}.wav</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <label>Custom prefix</label>
+      <input type="text" id="prefix" value="roneat_" placeholder="e.g. roneat_">
+    </div>
+    <div class="setting-row">
+      <label>Detection range</label>
+      <select id="range">
+        <option value="full">Full range (A0 - C8)</option>
+        <option value="low">Low range (A1 - C4)</option>
+        <option value="mid">Mid range (C3 - C6)</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <label>Normalize volume</label>
+      <input type="checkbox" id="normalize" style="width:auto">
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" id="scanBtn" disabled>Scan all</button>
+    <button class="btn btn-sec" id="renameBtn" disabled>Download ZIP</button>
+    <button class="btn btn-sec" id="clearBtn">Clear</button>
+  </div>
+
+  <div class="results" id="results">
+    <div class="status">No files loaded yet. Drop WAV files to begin.</div>
+  </div>
+
+  <div class="footer">
+    Tip: Rename files to include note names (e.g. C3.wav) so the plugin can map them automatically.
+  </div>
+</div>
+
+<script>
+const noteNames=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+function midiToNote(midi){
+  const octave=Math.floor(midi/12)-1;
+  return noteNames[midi%12]+octave;
+}
+function noteToMidi(note){
+  const name=note.slice(0,-1);
+  const oct=parseInt(note.slice(-1),10);
+  const idx=noteNames.indexOf(name);
+  if(idx<0) return -1;
+  return (oct+1)*12+idx;
+}
+
+// YIN-like pitch detection (autocorrelation)
+async function detectPitch(buffer, sampleRate){
+  const data=buffer.getChannelData(0);
+  const n=Math.min(data.length, Math.floor(sampleRate*2)); // use up to 2 seconds
+  const signal=data.slice(0,n);
+  
+  // RMS
+  let rms=0;
+  for(let i=0;i<signal.length;i++) rms+=signal[i]*signal[i];
+  rms=Math.sqrt(rms/signal.length);
+  if(rms<0.001) return {pitch:0,confidence:0};
+
+  // Autocorrelation
+  const minLag=Math.floor(sampleRate/2000); // max 2000 Hz
+  const maxLag=Math.floor(sampleRate/50);    // min 50 Hz
+  let bestLag=-1, bestVal=-Infinity;
+  for(let lag=minLag; lag<=maxLag; lag++){
+    let sum=0;
+    for(let i=0;i<signal.length-lag;i++) sum+=signal[i]*signal[i+lag];
+    if(sum>bestVal){bestVal=sum; bestLag=lag;}
+  }
+  if(bestLag<=0) return {pitch:0,confidence:0};
+  
+  const pitch=sampleRate/bestLag;
+  const midi=69+12*Math.log2(pitch/440);
+  const confidence=Math.min(1, bestVal/(rms*rms*signal.length));
+  return {pitch,midi,confidence};
+}
+
+function normalizeBuffer(buffer, targetDB=-18){
+  const ch=buffer.numberOfChannels;
+  const len=buffer.length;
+  let sum=0;
+  for(let c=0;c<ch;c++){
+    const data=buffer.getChannelData(c);
+    for(let i=0;i<len;i++) sum+=data[i]*data[i];
+  }
+  const rms=Math.sqrt(sum/(ch*len));
+  if(rms<0.0001) return buffer;
+  const target=Math.pow(10, targetDB/20);
+  const gain=target/rms;
+  const out=audioCtx.createBuffer(ch, len, buffer.sampleRate);
+  for(let c=0;c<ch;c++){
+    const src=buffer.getChannelData(c);
+    const dst=out.getChannelData(c);
+    for(let i=0;i<len;i++) dst[i]=Math.max(-1, Math.min(1, src[i]*gain));
+  }
+  return out;
+}
+
+function writeString(view, offset, string){
+  for(let i=0;i<string.length;i++) view.setUint8(offset+i, string.charCodeAt(i));
+}
+
+function encodeWAV(buffer){
+  const numChannels=buffer.numberOfChannels;
+  const sampleRate=buffer.sampleRate;
+  const bitDepth=16;
+  const bytesPerSample=bitDepth/8;
+  const blockAlign=numChannels*bytesPerSample;
+  const dataLength=buffer.length*numChannels*bytesPerSample;
+  const arrayBuffer=new ArrayBuffer(44+dataLength);
+  const view=new DataView(arrayBuffer);
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, 36+dataLength, true);
+  writeString(view, 8, 'WAVE');
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate*blockAlign, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, bitDepth, true);
+  writeString(view, 36, 'data');
+  view.setUint32(40, dataLength, true);
+  let offset=44;
+  for(let i=0;i<buffer.length;i++){
+    for(let c=0;c<numChannels;c++){
+      const s=Math.max(-1, Math.min(1, buffer.getChannelData(c)[i]));
+      view.setInt16(offset, s<0?s*0x8000:s*0x7FFF, true);
+      offset+=2;
+    }
+  }
+  return new Blob([arrayBuffer], {type:'audio/wav'});
+}
+
+let files=[];
+let results=[];
+let audioCtx=null;
+
+const dropzone=document.getElementById('dropzone');
+const fileInput=document.getElementById('fileInput');
+const scanBtn=document.getElementById('scanBtn');
+const renameBtn=document.getElementById('renameBtn');
+const clearBtn=document.getElementById('clearBtn');
+const resultsEl=document.getElementById('results');
+const progress=document.getElementById('progress');
+const progressBar=document.getElementById('progressBar');
+const formatEl=document.getElementById('format');
+const prefixEl=document.getElementById('prefix');
+
+dropzone.addEventListener('click',()=>fileInput.click());
+dropzone.addEventListener('dragover',e=>{e.preventDefault();dropzone.classList.add('dragover');});
+dropzone.addEventListener('dragleave',()=>dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop',e=>{
+  e.preventDefault();
+  dropzone.classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change',e=>handleFiles(e.target.files));
+
+function handleFiles(fileList){
+  const accepted=Array.from(fileList).filter(f=>/\.(wav|aif|aiff|flac)$/i.test(f.name));
+  files=accepted;
+  results=files.map(f=>({file:f,audioBuffer:null,note:'-',confidence:0,midi:0,pitch:0,newName:''}));
+  renderResults();
+  scanBtn.disabled=files.length===0;
+  renameBtn.disabled=true;
+}
+
+function renderResults(){
+  if(results.length===0){resultsEl.innerHTML='<div class="status">No files loaded yet.</div>'; return;}
+  let html='<table><thead><tr><th>Original</th><th>Pitch (Hz)</th><th>Detected Note</th><th>Confidence</th><th>New name</th></tr></thead><tbody>';
+  results.forEach(r=>{
+    const confClass=r.confidence>0.7?'conf-high':r.confidence>0.4?'conf-med':'conf-low';
+    const confText=r.confidence>0.7?'High':r.confidence>0.4?'Medium':'Low';
+    html+=`<tr><td class="original-name">${r.file.name}</td><td>${r.pitch>0?r.pitch.toFixed(1):'-'}</td><td class="note-cell">${r.note}</td><td class="confidence ${confClass}">${r.confidence>0?confText+' ('+(r.confidence*100).toFixed(0)+'%)':'-'}</td><td class="original-name">${r.newName||'-'}</td></tr>`;
+  });
+  html+='</tbody></table>';
+  resultsEl.innerHTML=html;
+}
+
+function getRange(){
+  const v=document.getElementById('range').value;
+  if(v==='low') return {min:33, max:60}; // A1-C4
+  if(v==='mid') return {min:48, max:84}; // C3-C6
+  return {min:21, max:108}; // full
+}
+
+function clampNote(midi, range){
+  let note=Math.round(midi);
+  // Find nearest note within range
+  if(note<range.min) note=range.min;
+  if(note>range.max) note=range.max;
+  return note;
+}
+
+function getNewName(note){
+  let fmt=formatEl.value;
+  const prefix=prefixEl.value;
+  fmt=fmt.replace('{note}', note).replace('{prefix}', prefix);
+  return fmt+'.wav';
+}
+
+scanBtn.addEventListener('click',async ()=>{
+  if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  scanBtn.disabled=true;
+  progress.style.display='block';
+  const range=getRange();
+  for(let i=0;i<results.length;i++){
+    const r=results[i];
+    progressBar.style.width=((i/results.length)*100)+'%';
+    try{
+      const arrayBuffer=await r.file.arrayBuffer();
+      r.audioBuffer=await audioCtx.decodeAudioData(arrayBuffer);
+      const det=await detectPitch(r.audioBuffer, r.audioBuffer.sampleRate);
+      r.pitch=det.pitch;
+      r.confidence=det.confidence;
+      if(det.confidence>0.1){
+        r.midi=clampNote(det.midi, range);
+        r.note=midiToNote(r.midi);
+      } else {
+        r.note='?';
+      }
+    }catch(e){r.note='Error'; console.error(e);}
+    r.newName=getNewName(r.note);
+  }
+  progressBar.style.width='100%';
+  renderResults();
+  scanBtn.disabled=false;
+  renameBtn.disabled=false;
+  setTimeout(()=>progress.style.display='none',500);
+});
+
+renameBtn.addEventListener('click',async ()=>{
+  if(typeof JSZip==='undefined'){alert('JSZip library is still loading. Please wait a moment and try again.');return;}
+  renameBtn.disabled=true;
+  renameBtn.textContent='Creating ZIP...';
+  const zip=new JSZip();
+  const added=new Set();
+  const doNormalize=document.getElementById('normalize').checked;
+  for(const r of results){
+    if(r.newName && r.newName!=='-'){
+      let finalName=r.newName;
+      // Avoid duplicate names in ZIP
+      if(added.has(finalName)){
+        const base=finalName.replace(/\.wav$/i,'');
+        let n=2;
+        while(added.has(base+'_'+n+'.wav')) ++n;
+        finalName=base+'_'+n+'.wav';
+      }
+      added.add(finalName);
+      let blob=r.file;
+      if(doNormalize && r.audioBuffer){
+        const norm=normalizeBuffer(r.audioBuffer);
+        blob=encodeWAV(norm);
+      }
+      zip.file(finalName, blob);
+    }
+  }
+  const blob=await zip.generateAsync({type:'blob'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='renamed_samples.zip';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  renameBtn.textContent='Download ZIP';
+  renameBtn.disabled=false;
+});
+
+clearBtn.addEventListener('click',()=>{
+  files=[];results=[];renderResults();
+  scanBtn.disabled=true;renameBtn.disabled=true;
+  fileInput.value='';
+});
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</body>
+</html>

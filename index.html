@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synthlen Khmer - VST UI Prototype</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Montserrat:wght@400;600&display=swap');
+
+        :root {
+            --bg-color: #2b332e;
+            --panel-bg: #353f38;
+            --gold: #d4b872;
+            --dark-gold: #8a733b;
+            --screen-bg: #0a0d0a;
+            --shadow: #141a17;
+            --highlight: #4a574e;
+        }
+
+        body {
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Montserrat', sans-serif;
+            color: var(--gold);
+        }
+
+        .plugin-container {
+            width: 1000px;
+            height: 600px;
+            background: linear-gradient(135deg, var(--panel-bg), var(--bg-color));
+            border-radius: 15px;
+            box-shadow: 
+                0 20px 50px rgba(0,0,0,0.8),
+                inset 0 0 0 2px var(--highlight),
+                inset 0 0 20px rgba(0,0,0,0.5);
+            position: relative;
+            padding: 30px;
+            box-sizing: border-box;
+            border: 4px solid #1f2622;
+        }
+
+        /* Top Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 36px;
+            margin: 0;
+            letter-spacing: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(to bottom, #f2db98, #967f40);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            font-size: 11px;
+            letter-spacing: 4px;
+            margin: 5px 0 0 0;
+            color: var(--dark-gold);
+        }
+
+        /* Layout Grid */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 250px 1fr 250px;
+            gap: 20px;
+            height: calc(100% - 100px);
+        }
+
+        /* Knobs Section */
+        .knobs-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .knob-row {
+            display: flex;
+            gap: 25px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .knob-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .knob {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #5a665e, #2b332e);
+            box-shadow: 
+                5px 5px 10px rgba(0,0,0,0.6),
+                -2px -2px 5px rgba(255,255,255,0.1),
+                inset 0 0 5px rgba(0,0,0,0.5);
+            position: relative;
+            cursor: ns-resize;
+            border: 2px solid #1a1e1b;
+        }
+
+        .knob-indicator {
+            width: 4px;
+            height: 18px;
+            background-color: var(--gold);
+            position: absolute;
+            top: 6px;
+            left: calc(50% - 2px);
+            border-radius: 2px;
+            transform-origin: 2px 29px;
+            transform: rotate(-135deg);
+            box-shadow: 0 0 5px var(--gold);
+        }
+
+        .knob-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        
+        .knob-sublabel {
+            font-size: 9px;
+            color: var(--dark-gold);
+            margin-top: -5px;
+        }
+
+        /* Center Screen */
+        .center-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .screen {
+            background-color: var(--screen-bg);
+            height: 200px;
+            border-radius: 8px;
+            border: 4px solid #1a1e1b;
+            box-shadow: 
+                inset 0 5px 20px rgba(0,0,0,0.9),
+                0 2px 0 rgba(255,255,255,0.1);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .screen-title {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-family: 'Cinzel', serif;
+            color: var(--gold);
+            font-size: 18px;
+        }
+
+        .waveform {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 120px;
+        }
+
+        .bar {
+            width: 5px;
+            background: linear-gradient(to top, #d4b872, #fff);
+            border-radius: 2px;
+            box-shadow: 0 0 6px var(--gold);
+        }
+
+        /* Presets Area */
+        .preset-section {
+            background: #2b332e;
+            border: 2px solid #1a1e1b;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .preset-title {
+            text-align: center;
+            font-size: 13px;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
+
+        .preset-list {
+            background: var(--screen-bg);
+            border: 2px solid #1a1e1b;
+            border-radius: 5px;
+            padding: 10px;
+            width: 80%;
+            height: 100px;
+            overflow-y: auto;
+            color: #888;
+            font-size: 13px;
+            line-height: 2;
+            text-align: center;
+        }
+
+        .preset-active {
+            color: var(--gold);
+            background: rgba(212, 184, 114, 0.15);
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        /* Bottom Instruments area */
+        .instruments-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .instrument-box {
+            background: linear-gradient(to bottom, #3a453f, #2b332e);
+            border: 2px solid #1a1e1b;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.5);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .instrument-label {
+            position: absolute;
+            bottom: 8px;
+            width: 100%;
+            left: 0;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* Carved decorations (Placeholder for real images) */
+        .carving {
+            border: 1px dashed var(--highlight);
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--dark-gold);
+            font-size: 12px;
+            width: 90%;
+            background: rgba(0,0,0,0.2);
+            margin-bottom: 15px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="plugin-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>SYNTHLEN KHMER</h1>
+            <p>TRADITIONAL INSTRUMENT PLUGIN</p>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-layout">
+            
+            <!-- Left Controls -->
+            <div class="knobs-section">
+                <div class="knob-row">
+                    <div class="knob-container">
+                        <div class="knob"><div class="knob-indicator"></div></div>
+                        <div class="knob-label">RESONANCE</div>
+                        <div class="knob-sublabel">(Tror)</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob"><div class="knob-indicator"></div></div>
+                        <div class="knob-label">CUTOFF</div>
+                        <div class="knob-sublabel">(Roneat)</div>
+                    </div>
+                </div>
+
+                <!-- Instrument Picture Placeholder -->
+                <div class="instrument-box" style="height: 160px; width: 100%;">
+                    <div class="carving" style="height: 100px;">[ដាក់រូប រនាតឯក ទីនេះ]</div>
+                    <div class="instrument-label">Roneat Ek</div>
+                </div>
+            </div>
+
+            <!-- Center Screen & Presets -->
+            <div class="center-section">
+                <div class="screen">
+                    <div class="screen-title">Roneat Ek</div>
+                    <div class="waveform" id="waveform">
+                        <!-- Bars generated by JS -->
+                    </div>
+                </div>
+
+                <div class="preset-section">
+                    <div class="preset-title">MULTI-EFFECT & PRESETS</div>
+                    <div class="preset-list">
+                        <div class="preset-active">Angkor Sunset</div>
+                        <div>Mekong Flow</div>
+                        <div>Royal Ballet</div>
+                        <div>Pine Forest</div>
+                        <div>Khmer Ambience</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Controls -->
+            <div class="knobs-section">
+                <div class="knob-row">
+                    <div class="knob-container">
+                        <div class="knob"><div class="knob-indicator"></div></div>
+                        <div class="knob-label">ATTACK</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob"><div class="knob-indicator"></div></div>
+                        <div class="knob-label">DECAY</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob"><div class="knob-indicator"></div></div>
+                        <div class="knob-label">RELEASE</div>
+                    </div>
+                </div>
+
+                <div class="instruments-panel">
+                    <div class="instrument-box" style="height: 140px;">
+                        <div class="carving" style="height: 80px; font-size: 10px;">[រូប ទ្រ]</div>
+                        <div class="instrument-label">Tror</div>
+                    </div>
+                    <div class="instrument-box" style="height: 140px;">
+                        <div class="carving" style="height: 80px; font-size: 10px;">[រូប ពិណ]</div>
+                        <div class="instrument-label">Pin</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Generate waveform bars matching the plugin design
+        const waveformContainer = document.getElementById('waveform');
+        const numBars = 45;
+        
+        for (let i = 0; i < numBars; i++) {
+            const bar = document.createElement('div');
+            bar.classList.add('bar');
+            
+            let height;
+            if (i < 12) {
+                // Attack phase
+                height = (i * 8) + Math.random() * 5;
+            } else {
+                // Decay phase
+                height = 100 * Math.pow(0.88, (i - 12)) + Math.random() * 5;
+            }
+            
+            bar.style.height = `${height}px`;
+            waveformContainer.appendChild(bar);
+        }
+
+        // Add interactive drag to rotation for Knobs
+        document.querySelectorAll('.knob').forEach(knob => {
+            let isDragging = false;
+            let currentAngle = -135; // Default minimum position
+            const indicator = knob.querySelector('.knob-indicator');
+
+            knob.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                let startY = e.clientY;
+                let startAngle = currentAngle;
+
+                const onMouseMove = (moveEvent) => {
+                    if (!isDragging) return;
+                    // Calculate movement (drag up = increase, drag down = decrease)
+                    const deltaY = startY - moveEvent.clientY;
+                    currentAngle = Math.min(135, Math.max(-135, startAngle + deltaY * 2));
+                    indicator.style.transform = `rotate(${currentAngle}deg)`;
+                };
+
+                const onMouseUp = () => {
+                    isDragging = false;
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                };
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+        });
+    </script>
+</body>
+</html>
