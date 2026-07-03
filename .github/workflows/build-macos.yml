@@ -18,7 +18,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew install cmake ninja
-          pip3 install gdown
+          pip3 install --break-system-packages gdown
 
       - name: Bundle UI
         shell: bash
