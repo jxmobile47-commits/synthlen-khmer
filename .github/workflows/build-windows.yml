@@ -59,6 +59,11 @@ jobs:
 
           Remove-Item "SynthlenKhmer.banks.part1", "SynthlenKhmer.banks.part2" -Force
 
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Configure CMake
         shell: cmd
         working-directory: vst
