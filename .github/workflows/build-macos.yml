@@ -105,10 +105,16 @@ jobs:
             echo "WARNING: Standalone not found"
           fi
 
-          # Copy encrypted bank pack if it exists
+          # Copy encrypted bank pack if it exists (skip if >2GB for GitHub Release)
+          BANKS_SIZE=0
           if [ -f "SynthlenKhmer.banks" ]; then
+            BANKS_SIZE=$(stat -f%z SynthlenKhmer.banks 2>/dev/null || stat -c%s SynthlenKhmer.banks)
+          fi
+          if [ "$BANKS_SIZE" -lt 2000000000 ] && [ -f "SynthlenKhmer.banks" ]; then
             cp "SynthlenKhmer.banks" "$PKG_DIR/root/Users/Shared/Synthlen Khmer/"
-            echo "Banks pack copied"
+            echo "Banks pack copied ($((BANKS_SIZE / 1048576)) MB)"
+          else
+            echo "Banks file too large ($((BANKS_SIZE / 1048576)) MB) - user downloads separately"
           fi
 
           # Postinstall script
@@ -183,11 +189,15 @@ jobs:
             2. Double-click to install
             3. VST3 → `/Library/Audio/Plug-Ins/VST3/`
             4. Standalone → `/Applications/`
-            5. Sound Banks → `~/Documents/Synthlen Khmer/`
+
+            ### Sound Banks (download separately)
+            - Part 1: https://drive.google.com/file/d/1awAW5NPC_9QVf7ro59EATCzrLpHzQ9QR/view
+            - Part 2: https://drive.google.com/file/d/1ncpgk5fk3ERz7wTq7d668VhqJsR7kmvv/view
+            - Recombine: `cat SynthlenKhmer.banks.part1 SynthlenKhmer.banks.part2 > SynthlenKhmer.banks`
+            - Place at: `~/Documents/Synthlen Khmer/SynthlenKhmer.banks`
 
             ### Build info
             - Universal Binary (Apple Silicon + Intel)
-            - Includes encrypted sound banks (2.4GB)
             - 16 AUX outputs + Main stereo
           files: vst/installer_output/SynthlenKhmer-Setup-*.pkg
           prerelease: false

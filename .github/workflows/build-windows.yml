@@ -104,10 +104,15 @@ jobs:
             Write-Host "Standalone copied"
           }
 
-          # Copy banks
+          # Copy banks (skip if >2GB - user downloads separately)
           if (Test-Path "SynthlenKhmer.banks") {
-            Copy-Item "SynthlenKhmer.banks" $staging
-            Write-Host "Banks copied"
+            $banksSize = (Get-Item "SynthlenKhmer.banks").Length
+            if ($banksSize -lt 2000000000) {
+              Copy-Item "SynthlenKhmer.banks" $staging
+              Write-Host "Banks copied ($([math]::Round($banksSize/1MB,1)) MB)"
+            } else {
+              Write-Host "Banks file too large ($([math]::Round($banksSize/1MB,1)) MB) - user downloads separately"
+            }
           }
 
           # Create install batch script
@@ -142,8 +147,8 @@ jobs:
           )
           $lines | Out-File "$staging\Install-SynthlenKhmer.bat" -Encoding ASCII
 
-          # ZIP the staging directory
-          Compress-Archive -Path "$staging\*" -DestinationPath "$outDir\SynthlenKhmer-Setup-$version.zip" -Force
+          # ZIP the staging directory using 7-Zip (handles >2GB)
+          7z a -tzip "$outDir\SynthlenKhmer-Setup-$version.zip" "$staging\*"
 
           Write-Host "Installer created:"
           Get-ChildItem "$outDir" | ForEach-Object { Write-Host "  $($_.Name) - $([math]::Round($_.Length/1MB,1)) MB" }
@@ -168,11 +173,22 @@ jobs:
             2. Extract and run `Install-SynthlenKhmer.bat` as Administrator
             3. VST3 → `C:\Program Files\Common Files\VST3\`
             4. Standalone → `C:\Program Files\Synthlen Khmer\`
-            5. Sound Banks → `Documents\Synthlen Khmer\`
+
+            ### Sound Banks (download separately)
+            - Part 1: https://drive.google.com/file/d/1awAW5NPC_9QVf7ro59EATCzrLpHzQ9QR/view
+            - Part 2: https://drive.google.com/file/d/1ncpgk5fk3ERz7wTq7d668VhqJsR7kmvv/view
+            - Recombine in PowerShell:
+              ```powershell
+              $p1 = [IO.File]::OpenRead("SynthlenKhmer.banks.part1")
+              $p2 = [IO.File]::OpenRead("SynthlenKhmer.banks.part2")
+              $out = [IO.File]::Create("SynthlenKhmer.banks")
+              $p1.CopyTo($out); $p2.CopyTo($out)
+              $p1.Close(); $p2.Close(); $out.Close()
+              ```
+            - Place at: `Documents\Synthlen Khmer\SynthlenKhmer.banks`
 
             ### Build info
             - x64 build
-            - Includes encrypted sound banks (2.4GB)
             - 16 AUX outputs + Main stereo
           files: vst/installer_output/*.zip
           prerelease: false
