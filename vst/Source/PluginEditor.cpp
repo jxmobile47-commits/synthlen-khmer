@@ -111,22 +111,18 @@ juce::WebBrowserComponent::Options SynthlenKhmerEditor::makeOptions()
                     names.add (n);
                 completion (juce::var (names));
             })
-        // Pitch bend wheel: JS calls pitchBend(value) where value is 0..16383.
         .withNativeFunction ("pitchBend",
             [this] (const juce::Array<juce::var>& args,
                     juce::WebBrowserComponent::NativeFunctionCompletion completion)
             {
-                if (args.size() >= 1)
-                    processorRef.addPitchBend ((int) args[0]);
+                if (args.size() >= 1) processorRef.addPitchBend ((int) args[0]);
                 completion (juce::var());
             })
-        // Modulation wheel: JS calls modWheel(value) where value is 0..127.
         .withNativeFunction ("modWheel",
             [this] (const juce::Array<juce::var>& args,
                     juce::WebBrowserComponent::NativeFunctionCompletion completion)
             {
-                if (args.size() >= 1)
-                    processorRef.addModWheel ((int) args[0]);
+                if (args.size() >= 1) processorRef.addModWheel ((int) args[0]);
                 completion (juce::var());
             })
         // Register all parameter relays.
