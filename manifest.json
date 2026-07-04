@@ -1,0 +1,18 @@
+﻿{
+    "instruments":  {
+                        "roneat":  "/uploads/instruments/roneat.png",
+                        "pin":  "/uploads/instruments/pin.png",
+                        "chayam":  "/uploads/instruments/chayam.png",
+                        "tror":  "/uploads/instruments/tror.png"
+                    },
+    "background":  "/uploads/background/background.png",
+    "slideshow":  [
+                      "/uploads/slideshow/slide_1781517619082_ji6mji.png",
+                      "/uploads/slideshow/slide_1781517633711_82uke8.png",
+                      "/uploads/slideshow/slide_1781517633714_uk9ydz.png",
+                      "/uploads/slideshow/slide_1781517633717_3zao22.png",
+                      "/uploads/slideshow/slide_1781517633719_fwlsc0.png",
+                      "/uploads/slideshow/slide_1781517633722_1irvjn.png",
+                      "/uploads/slideshow/slide_1781517633725_h6s1vz.png"
+                  ]
+}
