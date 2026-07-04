@@ -35,12 +35,12 @@ jobs:
         working-directory: vst
         run: |
           echo "Downloading bank pack part 1 from Google Drive..."
-          gdown "1awAW5NPC_9QVf7ro59EATCzrLpHzQ9QR" -O SynthlenKhmer.banks.part1 || \
-            curl -L "https://drive.google.com/uc?export=download&id=1awAW5NPC_9QVf7ro59EATCzrLpHzQ9QR" -o SynthlenKhmer.banks.part1
+          gdown "1RMRuVSP2O-r1K_RSvswuc2NTWGFrRTMZ" -O SynthlenKhmer.banks.part1 || \
+            curl -L "https://drive.google.com/uc?export=download&id=1RMRuVSP2O-r1K_RSvswuc2NTWGFrRTMZ" -o SynthlenKhmer.banks.part1
 
           echo "Downloading bank pack part 2 from Google Drive..."
-          gdown "1ncpgk5fk3ERz7wTq7d668VhqJsR7kmvv" -O SynthlenKhmer.banks.part2 || \
-            curl -L "https://drive.google.com/uc?export=download&id=1ncpgk5fk3ERz7wTq7d668VhqJsR7kmvv" -o SynthlenKhmer.banks.part2
+          gdown "1uQMq0ASgX0cKGcyaO1xNUhIvm0G0WP9F" -O SynthlenKhmer.banks.part2 || \
+            curl -L "https://drive.google.com/uc?export=download&id=1uQMq0ASgX0cKGcyaO1xNUhIvm0G0WP9F" -o SynthlenKhmer.banks.part2
 
           echo "Recombining..."
           cat SynthlenKhmer.banks.part1 SynthlenKhmer.banks.part2 > SynthlenKhmer.banks
@@ -194,8 +194,8 @@ jobs:
             4. Standalone → `/Applications/`
 
             ### Sound Banks (download separately)
-            - Part 1: https://drive.google.com/file/d/1awAW5NPC_9QVf7ro59EATCzrLpHzQ9QR/view
-            - Part 2: https://drive.google.com/file/d/1ncpgk5fk3ERz7wTq7d668VhqJsR7kmvv/view
+            - Part 1: https://drive.google.com/file/d/1RMRuVSP2O-r1K_RSvswuc2NTWGFrRTMZ/view
+            - Part 2: https://drive.google.com/file/d/1uQMq0ASgX0cKGcyaO1xNUhIvm0G0WP9F/view
             - Recombine: `cat SynthlenKhmer.banks.part1 SynthlenKhmer.banks.part2 > SynthlenKhmer.banks`
             - Place at: `~/Documents/Synthlen Khmer/SynthlenKhmer.banks`
 

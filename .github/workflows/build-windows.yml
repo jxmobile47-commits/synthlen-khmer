@@ -47,9 +47,9 @@ jobs:
         working-directory: vst
         run: |
           Write-Host "Downloading bank pack part 1..."
-          gdown "1awAW5NPC_9QVf7ro59EATCzrLpHzQ9QR" -O "SynthlenKhmer.banks.part1"
+          gdown "1RMRuVSP2O-r1K_RSvswuc2NTWGFrRTMZ" -O "SynthlenKhmer.banks.part1"
           Write-Host "Downloading bank pack part 2..."
-          gdown "1ncpgk5fk3ERz7wTq7d668VhqJsR7kmvv" -O "SynthlenKhmer.banks.part2"
+          gdown "1uQMq0ASgX0cKGcyaO1xNUhIvm0G0WP9F" -O "SynthlenKhmer.banks.part2"
 
           Write-Host "Recombining..."
           $p1 = [System.IO.File]::OpenRead("SynthlenKhmer.banks.part1")
@@ -178,8 +178,8 @@ jobs:
             4. Standalone → `C:\Program Files\Synthlen Khmer\`
 
             ### Sound Banks (download separately)
-            - Part 1: https://drive.google.com/file/d/1awAW5NPC_9QVf7ro59EATCzrLpHzQ9QR/view
-            - Part 2: https://drive.google.com/file/d/1ncpgk5fk3ERz7wTq7d668VhqJsR7kmvv/view
+            - Part 1: https://drive.google.com/file/d/1RMRuVSP2O-r1K_RSvswuc2NTWGFrRTMZ/view
+            - Part 2: https://drive.google.com/file/d/1uQMq0ASgX0cKGcyaO1xNUhIvm0G0WP9F/view
             - Recombine in PowerShell:
               ```powershell
               $p1 = [IO.File]::OpenRead("SynthlenKhmer.banks.part1")
