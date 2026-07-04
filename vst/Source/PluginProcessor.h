@@ -52,8 +52,6 @@ public:
 
     // Called from the GUI (on-screen piano) to inject a MIDI note.
     void addMidiNote (bool isNoteOn, int midiNote, float velocity);
-    void addPitchBend (int value);
-    void addModWheel (int value);
 
     // ----- Preset / sound-bank API ------------------------------------------
     static juce::StringArray getPresetNames();

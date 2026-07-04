@@ -199,10 +199,6 @@ body.locked .slide-nav{cursor:pointer}
     <div class="panel" style="display:flex;flex-direction:column;align-items:center">
       <div class="sec-title">ENVELOPE</div>
       <div class="knob-row">
-        <div class="knob-c"><div class="knob" id="pbKnob" style="cursor:ns-resize"><div class="knob-i"></div></div><div class="knob-l">PITCH BEND</div></div>
-        <div class="knob-c"><div class="knob" id="modKnob" style="cursor:ns-resize"><div class="knob-i"></div></div><div class="knob-l">MOD WHEEL</div></div>
-      </div>
-      <div class="knob-row">
         <div class="knob-c"><div class="knob" data-param="master"><div class="knob-i"></div></div><div class="knob-l">MASTER</div></div>
       </div>
       <div class="knob-row">
@@ -278,31 +274,6 @@ document.querySelectorAll('.knob').forEach(k=>{
     document.addEventListener('mousemove',m);document.addEventListener('mouseup',u);
   });
 })
-
-// ===== Pitch Bend & Mod Wheel knobs =====
-(function(){
-  const pbKnob=document.getElementById('pbKnob');
-  const modKnob=document.getElementById('modKnob');
-  if(!pbKnob||!modKnob)return;
-  let pbA=0;const pbI=pbKnob.querySelector('.knob-i');
-  const drawPB=()=>{pbI.style.transform='rotate('+pbA+'deg)'};
-  function setPB(a){pbA=Math.max(-135,Math.min(135,a));drawPB();
-    if(window.__pitchBend)window.__pitchBend(Math.round(8192+(pbA/135)*8191));}
-  pbKnob.addEventListener('mousedown',e=>{let d=true;const sy=e.clientY,sa=pbA;
-    const m=ev=>{if(!d)return;setPB(sa+(sy-ev.clientY)*2);};
-    const u=()=>{d=false;document.removeEventListener('mousemove',m);document.removeEventListener('mouseup',u);setPB(0);};
-    document.addEventListener('mousemove',m);document.addEventListener('mouseup',u);});
-  drawPB();
-  let modA=-135;const modI=modKnob.querySelector('.knob-i');
-  const drawMod=()=>{modI.style.transform='rotate('+modA+'deg)'};
-  function setMod(a){modA=Math.max(-135,Math.min(135,a));drawMod();
-    if(window.__modWheel)window.__modWheel(Math.round(((modA+135)/270)*127));}
-  modKnob.addEventListener('mousedown',e=>{let d=true;const sy=e.clientY,sa=modA;
-    const m=ev=>{if(!d)return;setMod(sa+(sy-ev.clientY)*2);};
-    const u=()=>{d=false;document.removeEventListener('mousemove',m);document.removeEventListener('mouseup',u)};
-    document.addEventListener('mousemove',m);document.addEventListener('mouseup',u);});
-  drawMod();
-})();
 
 // ===== Backend API helpers =====
 function postFile(url,file,name){
@@ -706,11 +677,6 @@ if (window.__JUCE__) {
     const pianoNote = Juce.getNativeFunction('pianoNote');
     window.__noteOn  = (midi) => pianoNote(true,  midi, 0.85);
     window.__noteOff = (midi) => pianoNote(false, midi, 0.0);
-
-    const pitchBendFn = Juce.getNativeFunction('pitchBend');
-    const modWheelFn  = Juce.getNativeFunction('modWheel');
-    window.__pitchBend = (val) => pitchBendFn(val);
-    window.__modWheel  = (val) => modWheelFn(val);
 
     // --- Preset list -> sound bank --------------------------------------
     const selectPresetFn = Juce.getNativeFunction('selectPreset');

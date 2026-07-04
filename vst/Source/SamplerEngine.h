@@ -24,8 +24,6 @@ struct SharedParams
     std::atomic<float>* resonance = nullptr;
     std::atomic<float>* pitch     = nullptr;
 
-    static constexpr float pitchBendRangeSemitones = 2.0f;
-
     static float get (std::atomic<float>* p, float fallback) { return p ? p->load() : fallback; }
 };
 
@@ -81,7 +79,7 @@ public:
     }
 
     void startNote (int midiNoteNumber, float velocity,
-                    juce::SynthesiserSound* s, int currentPitchWheel) override
+                    juce::SynthesiserSound* s, int /*currentPitchWheel*/) override
     {
         currentSound = dynamic_cast<KhmerSound*> (s);
         if (currentSound == nullptr)
@@ -91,7 +89,6 @@ public:
         // Natural velocity curve: square-root response for more realistic dynamics.
         level = juce::jlimit (0.1f, 1.0f, std::sqrt (velocity));
         noteMidi = midiNoteNumber;
-        pitchWheelValue = currentPitchWheel;
 
         prepareFilterIfNeeded();
         filter.reset();
@@ -118,11 +115,8 @@ public:
         }
     }
 
-    void pitchWheelMoved (int newValue) override { pitchWheelValue = newValue; }
-    void controllerMoved (int controllerNumber, int controllerValue) override
-    {
-        if (controllerNumber == 1) modWheelValue = controllerValue;
-    }
+    void pitchWheelMoved (int) override {}
+    void controllerMoved (int, int) override {}
 
     void renderNextBlock (juce::AudioBuffer<float>& output,
                           int startSample, int numSamples) override
@@ -211,10 +205,10 @@ public:
 private:
     double playbackRatio() const
     {
+        // semitone offset from the root note + global Pitch knob (-12..+12).
         const float pitchKnob = SharedParams::get (params ? params->pitch : nullptr, 0.5f);
         const double semis = (noteMidi - currentSound->rootNote) + (pitchKnob - 0.5f) * 24.0;
-        const double bendSemitones = ((double) (pitchWheelValue - 8192) / 8192.0) * SharedParams::pitchBendRangeSemitones;
-        const double base  = std::pow (2.0, (semis + bendSemitones) / 12.0);
+        const double base  = std::pow (2.0, semis / 12.0);
         return base * (currentSound->sourceSampleRate / getSampleRate());
     }
 
@@ -247,9 +241,9 @@ private:
     {
         const float cut = SharedParams::get (params ? params->cutoff    : nullptr, 0.7f);
         const float res = SharedParams::get (params ? params->resonance : nullptr, 0.3f);
-        const float modAdd = (modWheelValue / 127.0f) * 0.25f;
-        const float hz = 20.0f * std::pow (1000.0f, juce::jlimit (0.0f, 1.0f, cut + modAdd));
-        const float q  = 0.5f + res * 9.5f;
+        // 20 Hz .. 20 kHz, exponential.
+        const float hz = 20.0f * std::pow (1000.0f, juce::jlimit (0.0f, 1.0f, cut));
+        const float q  = 0.5f + res * 9.5f; // 0.5 .. 10
         filter.setCutoffFrequency (juce::jlimit (20.0f, 20000.0f, hz));
         filter.setResonance (q);
     }
@@ -264,9 +258,7 @@ private:
     double sourceSamplePosition = 0.0;
     float  level = 1.0f;
     int    noteMidi = 60;
-    int    pitchWheelValue = 8192;
-    int    modWheelValue = 0;
-    float  aaL = 0.0f, aaR = 0.0f;
+    float  aaL = 0.0f, aaR = 0.0f; // anti-aliasing filter state
 };
 
 //------------------------------------------------------------------------------

@@ -649,20 +649,6 @@ void SynthlenKhmerProcessor::addMidiNote (bool isNoteOn, int midiNote, float vel
     midiCollector.addMessageToQueue (msg);
 }
 
-void SynthlenKhmerProcessor::addPitchBend (int value)
-{
-    auto msg = juce::MidiMessage::pitchWheel (1, juce::jlimit (0, 16383, value));
-    msg.setTimeStamp (juce::Time::getMillisecondCounterHiRes() * 0.001);
-    midiCollector.addMessageToQueue (msg);
-}
-
-void SynthlenKhmerProcessor::addModWheel (int value)
-{
-    auto msg = juce::MidiMessage::controllerEvent (1, 1, juce::jlimit (0, 127, value));
-    msg.setTimeStamp (juce::Time::getMillisecondCounterHiRes() * 0.001);
-    midiCollector.addMessageToQueue (msg);
-}
-
 //==============================================================================
 juce::AudioProcessorEditor* SynthlenKhmerProcessor::createEditor()
 {

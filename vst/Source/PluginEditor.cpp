@@ -111,20 +111,6 @@ juce::WebBrowserComponent::Options SynthlenKhmerEditor::makeOptions()
                     names.add (n);
                 completion (juce::var (names));
             })
-        .withNativeFunction ("pitchBend",
-            [this] (const juce::Array<juce::var>& args,
-                    juce::WebBrowserComponent::NativeFunctionCompletion completion)
-            {
-                if (args.size() >= 1) processorRef.addPitchBend ((int) args[0]);
-                completion (juce::var());
-            })
-        .withNativeFunction ("modWheel",
-            [this] (const juce::Array<juce::var>& args,
-                    juce::WebBrowserComponent::NativeFunctionCompletion completion)
-            {
-                if (args.size() >= 1) processorRef.addModWheel ((int) args[0]);
-                completion (juce::var());
-            })
         // Register all parameter relays.
         .withOptionsFrom (resonanceRelay)
         .withOptionsFrom (cutoffRelay)
