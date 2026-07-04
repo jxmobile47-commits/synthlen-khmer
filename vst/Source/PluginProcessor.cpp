@@ -293,18 +293,18 @@ juce::StringArray SynthlenKhmerProcessor::getPresetNames()
 {
     juce::StringArray names;
 
-    // Prefer the encrypted bank pack.
+    // Encrypted bank pack.
     auto& pack = getBankPack();
     if (! pack.entries.empty())
     {
         for (auto& e : pack.entries)
             names.addIfNotAlreadyThere (e.preset);
-        names.sortNatural();
-        return names;
     }
 
+    // Also scan disk folders (banks/ or Documents/Synthlen Khmer/banks/).
     for (auto& d : findBanksRoot().findChildFiles (juce::File::findDirectories, false))
-        names.add (d.getFileName());
+        names.addIfNotAlreadyThere (d.getFileName());
+
     names.sortNatural();
     return names;
 }
@@ -318,6 +318,10 @@ SynthlenKhmerProcessor::snapshotFor (const juce::String& name)
     // Quiet sample banks -> boost gain.
     if (name == "Russey Khyal") return { 0.0f, 1.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f, 0.05f, false, false, false, 6.0f };
     if (name == "Pei Bampe")    return { 0.0f, 1.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f, 0.05f, false, false, false, 6.0f };
+    if (name == "Sax")          return { 0.0f, 1.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f, 0.05f, false, false, false, 1.0f };
+    if (name == "Houch")        return { 0.0f, 1.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f, 0.05f, false, false, false, 5.0f };
+    if (name == "Harmonica")    return { 0.0f, 1.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f, 0.05f, false, false, false, 1.0f };
+    if (name == "Jab")          return { 0.0f, 1.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f, 0.05f, false, false, false, 10.0f };
 
     return { 0.0f, 1.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f, 0.05f, false, false, false, 1.0f };
 }
