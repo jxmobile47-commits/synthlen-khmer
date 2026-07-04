@@ -341,8 +341,12 @@ void SynthlenKhmerProcessor::buildSounds (std::vector<SampleEntry>& entries)
         int idx = (int) std::distance (roots.begin(), it);
         int prev = idx > 0 ? roots[idx - 1] : -1;
         int next = idx < (int) roots.size() - 1 ? roots[idx + 1] : 128;
+        // Kontakt-style: first zone stretches to key 0, last zone to key 127.
         lowKey  = prev < 0 ? 0   : (prev + root) / 2 + 1;
         highKey = next > 127 ? 127 : (root + next) / 2;
+        // Ensure no gaps: clamp to valid range.
+        lowKey  = juce::jlimit (0, 127, lowKey);
+        highKey = juce::jlimit (0, 127, highKey);
     };
 
     // --- velocity layers: per root, sort by velHi and chain the ranges -------
@@ -388,7 +392,8 @@ void SynthlenKhmerProcessor::loadSamplesFromFolder (const juce::File& folder)
     const int n = files.size();
     for (int i = 0; i < n; ++i)
     {
-        int fallback = 36 + (n > 1 ? (i * 60) / (n - 1) : 24);
+        // Kontakt-style: spread samples across the full 88-key piano range (A0=21..C8=108).
+        int fallback = n > 1 ? 21 + (i * 87) / (n - 1) : 60;
         auto parsed = parseSampleName (files[i].getFileName(), fallback);
 
         SampleEntry e;
@@ -438,7 +443,7 @@ void SynthlenKhmerProcessor::loadBankSamples (const juce::String& presetName)
 
                     xorDecrypt (data.getData(), (size_t) m->size);
 
-                    int fallback = 36 + (n > 1 ? (i * 60) / (n - 1) : 24);
+                    int fallback = n > 1 ? 21 + (i * 87) / (n - 1) : 60;
                     auto parsed = parseSampleName (m->fileName, fallback);
 
                     SampleEntry e;
@@ -467,7 +472,7 @@ void SynthlenKhmerProcessor::loadBankSamples (const juce::String& presetName)
             const int n = files.size();
             for (int i = 0; i < n; ++i)
             {
-                int fallback = 36 + (n > 1 ? (i * 60) / (n - 1) : 24);
+                int fallback = n > 1 ? 21 + (i * 87) / (n - 1) : 60;
                 auto parsed = parseSampleName (files[i].getFileName(), fallback);
 
                 SampleEntry e;
