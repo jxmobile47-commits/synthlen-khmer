@@ -1,0 +1,172 @@
+name: Build Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths:
+      - 'vst/**'
+      - '.github/workflows/build-windows.yml'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install gdown
+        run: pip install gdown
+
+      - name: Bundle UI
+        shell: pwsh
+        working-directory: vst
+        run: |
+          if (Test-Path "..\synthlen-khmer.html") {
+            New-Item -ItemType Directory -Force -Path "ui" | Out-Null
+            Copy-Item "..\synthlen-khmer.html" "ui\" -Force
+            if (Test-Path "..\uploads") { Copy-Item "..\uploads" "ui\" -Recurse -Force }
+            if (Test-Path "..\manifest.json") { Copy-Item "..\manifest.json" "ui\" -Force }
+            Write-Host "UI bundled"
+          } else {
+            Write-Host "WARNING: synthlen-khmer.html not found"
+          }
+
+      - name: Download & recombine sound banks
+        shell: pwsh
+        working-directory: vst
+        run: |
+          Write-Host "Downloading bank pack part 1..."
+          gdown "1awAW5NPC_9QVf7ro59EATCzrLpHzQ9QR" -O "SynthlenKhmer.banks.part1"
+          Write-Host "Downloading bank pack part 2..."
+          gdown "1ncpgk5fk3ERz7wTq7d668VhqJsR7kmvv" -O "SynthlenKhmer.banks.part2"
+
+          Write-Host "Recombining..."
+          $p1 = [System.IO.File]::OpenRead("SynthlenKhmer.banks.part1")
+          $p2 = [System.IO.File]::OpenRead("SynthlenKhmer.banks.part2")
+          $out = [System.IO.File]::Create("SynthlenKhmer.banks")
+          $p1.CopyTo($out, 1048576)
+          $p2.CopyTo($out, 1048576)
+          $p1.Close(); $p2.Close(); $out.Close()
+
+          $size = (Get-Item "SynthlenKhmer.banks").Length
+          Write-Host "Combined: $([math]::Round($size/1MB,1)) MB"
+
+          Remove-Item "SynthlenKhmer.banks.part1", "SynthlenKhmer.banks.part2" -Force
+
+      - name: Configure CMake
+        shell: cmd
+        working-directory: vst
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64
+
+      - name: Build
+        shell: cmd
+        working-directory: vst
+        run: cmake --build build --config Release --parallel 4
+
+      - name: Create Windows Installer
+        shell: pwsh
+        working-directory: vst
+        run: |
+          $version = "1.0.0"
+          $buildOut = "build\SynthlenKhmer_artefacts\Release"
+          $staging = "installer_staging"
+          $outDir = "installer_output"
+
+          Remove-Item $staging -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item $outDir -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path $staging | Out-Null
+          New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+
+          # Copy VST3
+          $vst3 = Get-ChildItem "$buildOut\VST3" -Filter "*.vst3" -Recurse | Select-Object -First 1
+          if ($vst3) {
+            Copy-Item $vst3.FullName $staging -Recurse
+            Write-Host "VST3 copied"
+          }
+
+          # Copy Standalone
+          $exe = Get-ChildItem "$buildOut\Standalone" -Filter "*.exe" | Select-Object -First 1
+          if ($exe) {
+            Copy-Item $exe.FullName $staging
+            Write-Host "Standalone copied"
+          }
+
+          # Copy banks
+          if (Test-Path "SynthlenKhmer.banks") {
+            Copy-Item "SynthlenKhmer.banks" $staging
+            Write-Host "Banks copied"
+          }
+
+          # Create install batch script
+          $lines = @(
+            '@echo off',
+            'echo ========================================',
+            'echo   Synthlen Khmer Installer v1.0.0',
+            'echo ========================================',
+            '',
+            'set VST3_DIR=%COMMONPROGRAMFILES%\VST3',
+            'set APP_DIR=%PROGRAMFILES%\Synthlen Khmer',
+            'set BANKS_DIR=%USERPROFILE%\Documents\Synthlen Khmer',
+            '',
+            'echo Installing VST3...',
+            'if not exist "%VST3_DIR%" mkdir "%VST3_DIR%"',
+            'xcopy /E /I /Y "Synthlen Khmer.vst3" "%VST3_DIR%\Synthlen Khmer.vst3\" >nul 2>&1',
+            '',
+            'echo Installing Standalone...',
+            'if not exist "%APP_DIR%" mkdir "%APP_DIR%"',
+            'copy /Y "Synthlen Khmer.exe" "%APP_DIR%\" >nul 2>&1',
+            '',
+            'echo Installing Sound Banks...',
+            'if not exist "%BANKS_DIR%" mkdir "%BANKS_DIR%"',
+            'copy /Y "SynthlenKhmer.banks" "%BANKS_DIR%\" >nul 2>&1',
+            '',
+            'echo Creating Shortcut...',
+            'powershell -Command "$ws = New-Object -ComObject WScript.Shell; $sc = $ws.CreateShortcut([Environment]::GetFolderPath(''Desktop'') + ''\Synthlen Khmer.lnk''); $sc.TargetPath = ''%PROGRAMFILES%\Synthlen Khmer\Synthlen Khmer.exe''; $sc.Save()"',
+            '',
+            'echo.',
+            'echo Installation complete!',
+            'pause'
+          )
+          $lines | Out-File "$staging\Install-SynthlenKhmer.bat" -Encoding ASCII
+
+          # ZIP the staging directory
+          Compress-Archive -Path "$staging\*" -DestinationPath "$outDir\SynthlenKhmer-Setup-$version.zip" -Force
+
+          Write-Host "Installer created:"
+          Get-ChildItem "$outDir" | ForEach-Object { Write-Host "  $($_.Name) - $([math]::Round($_.Length/1MB,1)) MB" }
+
+      - name: Upload Windows Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: SynthlenKhmer-Windows-Installer
+          path: vst/installer_output/*.zip
+          if-no-files-found: warn
+
+      - name: Auto-publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0-windows
+          name: Synthlen Khmer v1.0.0 - Windows
+          body: |
+            ## Synthlen Khmer - Windows Installer
+
+            ### Install
+            1. Download `SynthlenKhmer-Setup-1.0.0.zip`
+            2. Extract and run `Install-SynthlenKhmer.bat` as Administrator
+            3. VST3 → `C:\Program Files\Common Files\VST3\`
+            4. Standalone → `C:\Program Files\Synthlen Khmer\`
+            5. Sound Banks → `Documents\Synthlen Khmer\`
+
+            ### Build info
+            - x64 build
+            - Includes encrypted sound banks (2.4GB)
+            - 16 AUX outputs + Main stereo
+          files: vst/installer_output/*.zip
+          prerelease: false
+          fail_on_unmatched_files: false

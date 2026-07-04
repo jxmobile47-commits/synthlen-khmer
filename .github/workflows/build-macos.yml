@@ -167,3 +167,26 @@ jobs:
           name: SynthlenKhmer-macOS-Standalone
           path: vst/build/SynthlenKhmer_artefacts/Release/Standalone/*.app
           if-no-files-found: warn
+
+      - name: Auto-publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0-macos
+          name: Synthlen Khmer v1.0.0 - macOS
+          body: |
+            ## Synthlen Khmer - macOS Installer
+
+            ### Install
+            1. Download `SynthlenKhmer-Setup-1.0.0.pkg`
+            2. Double-click to install
+            3. VST3 → `/Library/Audio/Plug-Ins/VST3/`
+            4. Standalone → `/Applications/`
+            5. Sound Banks → `~/Documents/Synthlen Khmer/`
+
+            ### Build info
+            - Universal Binary (Apple Silicon + Intel)
+            - Includes encrypted sound banks (2.4GB)
+            - 16 AUX outputs + Main stereo
+          files: vst/installer_output/SynthlenKhmer-Setup-*.pkg
+          prerelease: false
+          fail_on_unmatched_files: false
