@@ -102,6 +102,14 @@ body{background:#0a0c0b;display:flex;flex-direction:column;justify-content:cente
 .piano-wrap::-webkit-scrollbar{height:4px}
 .piano-wrap::-webkit-scrollbar-track{background:rgba(30,36,32,0.5)}
 .piano-wrap::-webkit-scrollbar-thumb{background:rgba(212,184,114,0.3);border-radius:2px}
+/* Pitch Bend & Mod Wheel */
+.wheel-bar{display:flex;gap:12px;align-items:flex-end;padding:6px 0 2px 4px}
+.wheel-c{display:flex;flex-direction:column;align-items:center;gap:4px}
+.wheel-track{width:36px;height:120px;background:linear-gradient(180deg,#1a211d,#0f130f);border:2px solid #1a211d;border-radius:6px;position:relative;cursor:ns-resize;box-shadow:inset 0 0 8px rgba(0,0,0,0.6)}
+.wheel-fill{position:absolute;left:50%;bottom:50%;width:28px;height:0;background:linear-gradient(180deg,var(--gl),var(--gd));border-radius:3px;transform:translateX(-50%);transition:height 0.05s}
+.wheel-handle{position:absolute;left:50%;bottom:50%;width:30px;height:6px;background:linear-gradient(90deg,var(--gd),var(--gl),var(--gd));border-radius:3px;transform:translateX(-50%);box-shadow:0 0 6px var(--g),0 1px 3px rgba(0,0,0,0.8);transition:bottom 0.05s}
+.wheel-center-line{position:absolute;left:4px;right:4px;bottom:50%;height:1px;background:rgba(212,184,114,0.3)}
+.wheel-l{font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--g);text-shadow:1px 1px 2px rgba(0,0,0,0.9)}
 .piano{border:1px solid rgba(212,184,114,0.2);border-radius:4px;overflow:hidden;background:linear-gradient(180deg,rgba(30,36,32,0.95),rgba(15,19,16,0.98));box-shadow:inset 0 2px 8px rgba(0,0,0,0.4);display:flex;height:75px;position:relative;min-width:max-content}
 .piano .w{flex:1;height:100%;background:linear-gradient(180deg,#e8e0d0,#c8bca8);border-right:1px solid rgba(30,36,32,0.3);position:relative;z-index:1;cursor:pointer;transition:all 0.08s}
 .piano .w:last-child{border-right:none}
@@ -250,7 +258,26 @@ body.locked .slide-nav{cursor:pointer}
 
 <div class="piano-wrap">
   <div class="piano-label">VIRTUAL KEYS</div>
-  <div class="piano" id="piano"></div>
+  <div style="display:flex;align-items:flex-start;gap:8px">
+    <div class="wheel-bar">
+      <div class="wheel-c">
+        <div class="wheel-track" id="pbWheel">
+          <div class="wheel-center-line"></div>
+          <div class="wheel-fill" id="pbFill"></div>
+          <div class="wheel-handle" id="pbHandle"></div>
+        </div>
+        <div class="wheel-l">PITCH</div>
+      </div>
+      <div class="wheel-c">
+        <div class="wheel-track" id="modWheel">
+          <div class="wheel-fill" id="modFill" style="bottom:0"></div>
+          <div class="wheel-handle" id="modHandle" style="bottom:0"></div>
+        </div>
+        <div class="wheel-l">MOD</div>
+      </div>
+    </div>
+    <div class="piano" id="piano" style="flex:1"></div>
+  </div>
 </div>
 
 <script>
@@ -274,6 +301,67 @@ document.querySelectorAll('.knob').forEach(k=>{
     document.addEventListener('mousemove',m);document.addEventListener('mouseup',u);
   });
 })
+
+// ===== Pitch Bend & Mod Wheel =====
+(function(){
+  const pbTrack=document.getElementById('pbWheel');
+  const pbFill=document.getElementById('pbFill');
+  const pbHandle=document.getElementById('pbHandle');
+  const modTrack=document.getElementById('modWheel');
+  const modFill=document.getElementById('modFill');
+  const modHandle=document.getElementById('modHandle');
+  if(!pbTrack||!modTrack)return;
+
+  // Pitch bend: 0..16383, center=8192. Visual: -50%..+50% from center.
+  let pbVal=8192;
+  function drawPB(){
+    const pct=(pbVal-8192)/8192; // -1..+1
+    const halfH=60; // half of track height
+    if(pct>=0){
+      pbFill.style.bottom='50%';
+      pbFill.style.height=(pct*halfH)+'px';
+    }else{
+      pbFill.style.bottom=(50+pct*50)+'%';
+      pbFill.style.height=(-pct*halfH)+'px';
+    }
+    pbHandle.style.bottom=(50+pct*50)+'%';
+  }
+  function setPB(v){
+    pbVal=Math.max(0,Math.min(16383,v));
+    drawPB();
+    if(window.__pitchBend)window.__pitchBend(pbVal);
+  }
+  pbTrack.addEventListener('mousedown',e=>{
+    let d=true;const sy=e.clientY;const sv=pbVal;
+    const m=ev=>{if(!d)return;setPB(sv+(sy-ev.clientY)*90);};
+    const u=()=>{d=false;document.removeEventListener('mousemove',m);document.removeEventListener('mouseup',u);
+      // Spring back to center
+      setPB(8192);
+    };
+    document.addEventListener('mousemove',m);document.addEventListener('mouseup',u);
+  });
+  drawPB();
+
+  // Mod wheel: 0..127. Visual: 0%..100% from bottom.
+  let modVal=0;
+  function drawMod(){
+    const pct=modVal/127;
+    modFill.style.height=(pct*116)+'px';
+    modHandle.style.bottom=(pct*116)+'px';
+  }
+  function setMod(v){
+    modVal=Math.max(0,Math.min(127,v));
+    drawMod();
+    if(window.__modWheel)window.__modWheel(modVal);
+  }
+  modTrack.addEventListener('mousedown',e=>{
+    let d=true;const sy=e.clientY;const sv=modVal;
+    const m=ev=>{if(!d)return;setMod(sv+(sy-ev.clientY)*1.1);};
+    const u=()=>{d=false;document.removeEventListener('mousemove',m);document.removeEventListener('mouseup',u)};
+    document.addEventListener('mousemove',m);document.addEventListener('mouseup',u);
+  });
+  drawMod();
+})();
 
 // ===== Backend API helpers =====
 function postFile(url,file,name){
@@ -677,6 +765,12 @@ if (window.__JUCE__) {
     const pianoNote = Juce.getNativeFunction('pianoNote');
     window.__noteOn  = (midi) => pianoNote(true,  midi, 0.85);
     window.__noteOff = (midi) => pianoNote(false, midi, 0.0);
+
+    // --- Pitch bend & mod wheel -> MIDI --------------------------------
+    const pitchBendFn = Juce.getNativeFunction('pitchBend');
+    const modWheelFn  = Juce.getNativeFunction('modWheel');
+    window.__pitchBend = (val) => pitchBendFn(val);
+    window.__modWheel  = (val) => modWheelFn(val);
 
     // --- Preset list -> sound bank --------------------------------------
     const selectPresetFn = Juce.getNativeFunction('selectPreset');

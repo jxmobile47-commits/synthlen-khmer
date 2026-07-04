@@ -53,6 +53,10 @@ public:
     // Called from the GUI (on-screen piano) to inject a MIDI note.
     void addMidiNote (bool isNoteOn, int midiNote, float velocity);
 
+    // Called from the GUI (pitch bend / mod wheel controls).
+    void addPitchBend (int value);   // 0..16383, 8192 = center
+    void addModWheel (int value);    // 0..127
+
     // ----- Preset / sound-bank API ------------------------------------------
     static juce::StringArray getPresetNames();
     // Loads the bundled sound bank for a preset AND applies its knob snapshot.
