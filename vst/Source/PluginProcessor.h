@@ -53,6 +53,10 @@ public:
     // Called from the GUI (on-screen piano) to inject a MIDI note.
     void addMidiNote (bool isNoteOn, int midiNote, float velocity);
 
+    // ----- Licensing ----------------------------------------------------------
+    bool isLicensed() const { return licensed; }
+    bool activateLicense (const juce::String& key);
+
     // ----- Preset / sound-bank API ------------------------------------------
     static juce::StringArray getPresetNames();
     // Loads the bundled sound bank for a preset AND applies its knob snapshot.
@@ -97,8 +101,11 @@ private:
     // Simple master FX driven by the GUI parameters.
     juce::dsp::Reverb reverb;
     juce::dsp::DelayLine<float> delayLine { 96000 };
+    juce::dsp::Limiter<float> limiter;
     double currentSampleRate { 44100.0 };
     float  currentPresetGain { 1.0f };
+
+    std::atomic<bool> licensed { false };
 
     void applyFxParameters();
 

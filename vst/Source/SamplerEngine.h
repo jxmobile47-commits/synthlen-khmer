@@ -23,6 +23,13 @@ struct SharedParams
     std::atomic<float>* cutoff    = nullptr;
     std::atomic<float>* resonance = nullptr;
     std::atomic<float>* pitch     = nullptr;
+    std::atomic<float>* articulation = nullptr; // 0=LONG 0.5=SHORT 1=AUTO
+    std::atomic<float>* dynamics     = nullptr;
+    std::atomic<float>* vibDepth     = nullptr;
+    std::atomic<float>* vibRate      = nullptr;
+    std::atomic<float>* rr           = nullptr;
+    std::atomic<float>* poly         = nullptr;
+    std::atomic<float>* tune         = nullptr; // 0.5 = A440, +/- 1 semitone
 
     static float get (std::atomic<float>* p, float fallback) { return p ? p->load() : fallback; }
 };
@@ -79,16 +86,34 @@ public:
     }
 
     void startNote (int midiNoteNumber, float velocity,
-                    juce::SynthesiserSound* s, int /*currentPitchWheel*/) override
+                    juce::SynthesiserSound* s, int currentPitchWheel) override
     {
+        pitchBendSemis = ((float) currentPitchWheel - 8192.0f) / 8192.0f * 2.0f;
         currentSound = dynamic_cast<KhmerSound*> (s);
         if (currentSound == nullptr)
             return;
 
         sourceSamplePosition = 0.0;
-        // Natural velocity curve: square-root response for more realistic dynamics.
-        level = juce::jlimit (0.1f, 1.0f, std::sqrt (velocity));
+        // Velocity curve shaped by the DYNAMICS control:
+        //   dynamics = 0 -> almost flat (every note similar volume)
+        //   dynamics = 1 -> very touch-sensitive
+        const float dyn = SharedParams::get (params ? params->dynamics : nullptr, 0.8f);
+        level = juce::jlimit (0.05f, 1.0f, std::pow (velocity, 0.2f + 1.3f * dyn));
         noteMidi = midiNoteNumber;
+
+        // Round-robin humanisation: small random detune + level variation.
+        if (SharedParams::get (params ? params->rr : nullptr, 0.0f) > 0.5f)
+        {
+            auto& rnd = juce::Random::getSystemRandom();
+            rrDetune = (rnd.nextFloat() - 0.5f) * 0.24f;      // +/- 12 cents
+            level   *= 0.88f + rnd.nextFloat() * 0.12f;       // 88..100 %
+        }
+        else
+        {
+            rrDetune = 0.0f;
+        }
+
+        vibPhase = 0.0f;
 
         prepareFilterIfNeeded();
         filter.reset();
@@ -115,8 +140,18 @@ public:
         }
     }
 
-    void pitchWheelMoved (int) override {}
-    void controllerMoved (int, int) override {}
+    void pitchWheelMoved (int newValue) override
+    {
+        // +/- 2 semitones of MIDI pitch bend.
+        pitchBendSemis = ((float) newValue - 8192.0f) / 8192.0f * 2.0f;
+    }
+
+    void controllerMoved (int controllerNumber, int newValue) override
+    {
+        // Mod wheel (CC1) adds vibrato on top of the VIBRATO DEPTH slider.
+        if (controllerNumber == 1)
+            modWheel = (float) newValue / 127.0f;
+    }
 
     void renderNextBlock (juce::AudioBuffer<float>& output,
                           int startSample, int numSamples) override
@@ -137,6 +172,13 @@ public:
         const int    outChannels = output.getNumChannels();
         const int    fadeSamples = juce::jmin (64, currentSound->length / 4);
         const double aaCoeff = (ratio > 1.0) ? (1.0 / ratio) : 1.0; // anti-alias when pitching up
+
+        // Vibrato LFO (pitch modulation). Mod wheel (CC1) also adds vibrato.
+        const float vibDepth = juce::jmax (SharedParams::get (params ? params->vibDepth : nullptr, 0.0f), modWheel);
+        const float vibRate  = SharedParams::get (params ? params->vibRate  : nullptr, 0.5f);
+        const float vibHz    = 0.5f + vibRate * 7.5f;                       // 0.5 .. 8 Hz
+        const float vibInc   = juce::MathConstants<float>::twoPi * vibHz / (float) getSampleRate();
+        const float vibSemis = vibDepth * 0.5f;                              // up to +/- 50 cents
 
         while (--numSamples >= 0)
         {
@@ -191,7 +233,18 @@ public:
             if (outChannels > 1) output.addSample (1, startSample, r);
 
             ++startSample;
-            sourceSamplePosition += ratio;
+            if (vibSemis > 0.0001f)
+            {
+                vibPhase += vibInc;
+                if (vibPhase > juce::MathConstants<float>::twoPi)
+                    vibPhase -= juce::MathConstants<float>::twoPi;
+                // ~5.78 % pitch change per semitone (linear approximation).
+                sourceSamplePosition += ratio * (1.0 + vibSemis * std::sin (vibPhase) * 0.0578);
+            }
+            else
+            {
+                sourceSamplePosition += ratio;
+            }
 
             if (! adsr.isActive())
             {
@@ -205,9 +258,14 @@ public:
 private:
     double playbackRatio() const
     {
-        // semitone offset from the root note + global Pitch knob (-12..+12).
+        // semitone offset from the root note + global Pitch knob (-12..+12)
+        // + MIDI pitch bend (+/- 2 semis) + master tune (+/- 1 semi).
         const float pitchKnob = SharedParams::get (params ? params->pitch : nullptr, 0.5f);
-        const double semis = (noteMidi - currentSound->rootNote) + (pitchKnob - 0.5f) * 24.0;
+        const float tuneKnob  = SharedParams::get (params ? params->tune  : nullptr, 0.5f);
+        const double semis = (noteMidi - currentSound->rootNote)
+                           + (pitchKnob - 0.5f) * 24.0
+                           + (tuneKnob - 0.5f) * 2.0
+                           + pitchBendSemis + rrDetune;
         const double base  = std::pow (2.0, semis / 12.0);
         return base * (currentSound->sourceSampleRate / getSampleRate());
     }
@@ -219,6 +277,19 @@ private:
         p.decay   = 0.010f + 2.0f * SharedParams::get (params ? params->decay   : nullptr, 0.30f);
         p.sustain = 1.0f; // Full volume during sustain - let the sample's natural decay speak.
         p.release = 0.010f + 3.0f * SharedParams::get (params ? params->release : nullptr, 0.40f);
+
+        // Articulation: 0 = LONG, 0.5 = SHORT, 1 = AUTO (knob-driven, default).
+        const float art = SharedParams::get (params ? params->articulation : nullptr, 1.0f);
+        if (art < 0.25f)              // LONG: extended tail
+        {
+            p.release = juce::jmax (p.release, 1.5f);
+        }
+        else if (art < 0.75f)         // SHORT: staccato
+        {
+            p.decay   = 0.12f;
+            p.sustain = 0.0f;
+            p.release = 0.08f;
+        }
         adsr.setParameters (p);
     }
 
@@ -259,6 +330,10 @@ private:
     float  level = 1.0f;
     int    noteMidi = 60;
     float  aaL = 0.0f, aaR = 0.0f; // anti-aliasing filter state
+    float  rrDetune = 0.0f;        // round-robin random detune (semitones)
+    float  vibPhase = 0.0f;        // vibrato LFO phase
+    float  pitchBendSemis = 0.0f;  // MIDI pitch wheel (+/- 2 semitones)
+    float  modWheel = 0.0f;        // MIDI CC1 -> extra vibrato
 };
 
 //------------------------------------------------------------------------------
@@ -267,10 +342,20 @@ private:
 class KhmerSynth : public juce::Synthesiser
 {
 public:
+    const SharedParams* params = nullptr;
+
     void noteOn (int midiChannel, int midiNoteNumber, float velocity) override
     {
         const juce::ScopedLock sl (lock);
         const int vel = juce::jlimit (1, 127, (int) std::round (velocity * 127.0f));
+
+        // MONO mode (POLY off): release every other sounding note first.
+        if (SharedParams::get (params ? params->poly : nullptr, 1.0f) < 0.5f)
+            for (int v = 0; v < getNumVoices(); ++v)
+                if (auto* voice = getVoice (v))
+                    if (voice->getCurrentlyPlayingNote() >= 0
+                        && voice->getCurrentlyPlayingNote() != midiNoteNumber)
+                        voice->stopNote (0.0f, true);
 
         for (int i = 0; i < getNumSounds(); ++i)
         {

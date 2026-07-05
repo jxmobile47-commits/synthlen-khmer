@@ -1,4 +1,5 @@
 #include "PluginEditor.h"
+#include "Licensing.h"
 
 #if HAS_WEB_UI
  #include "BinaryData.h"
@@ -86,7 +87,17 @@ juce::WebBrowserComponent::Options SynthlenKhmerEditor::makeOptions()
                             maxW = d->userArea.getWidth();
                             maxH = d->userArea.getHeight();
                         }
-                        setSize (juce::jlimit (640, maxW, w), juce::jlimit (480, maxH, h));
+                        const int newW = juce::jlimit (480, maxW, w);
+                        const int newH = juce::jlimit (360, maxH, h);
+
+                        // Allow free resizing (small screens) while keeping the
+                        // design's aspect ratio so the UI scales cleanly.
+                        if (auto* c = getConstrainer())
+                        {
+                            c->setSizeLimits (480, 360, maxW, maxH);
+                            c->setFixedAspectRatio ((double) w / (double) h);
+                        }
+                        setSize (newW, newH);
                     });
                 }
                 completion (juce::var());
@@ -111,6 +122,27 @@ juce::WebBrowserComponent::Options SynthlenKhmerEditor::makeOptions()
                     names.add (n);
                 completion (juce::var (names));
             })
+        // License: returns [machineId, isLicensed].
+        .withNativeFunction ("getLicenseInfo",
+            [this] (const juce::Array<juce::var>& args,
+                    juce::WebBrowserComponent::NativeFunctionCompletion completion)
+            {
+                juce::ignoreUnused (args);
+                juce::Array<juce::var> info;
+                info.add (Licensing::getMachineId());
+                info.add (processorRef.isLicensed());
+                completion (juce::var (info));
+            })
+        // License: validates + stores the key. Returns true on success.
+        .withNativeFunction ("activateLicense",
+            [this] (const juce::Array<juce::var>& args,
+                    juce::WebBrowserComponent::NativeFunctionCompletion completion)
+            {
+                bool ok = false;
+                if (args.size() >= 1)
+                    ok = processorRef.activateLicense (args[0].toString());
+                completion (juce::var (ok));
+            })
         // Register all parameter relays.
         .withOptionsFrom (resonanceRelay)
         .withOptionsFrom (cutoffRelay)
@@ -121,9 +153,16 @@ juce::WebBrowserComponent::Options SynthlenKhmerEditor::makeOptions()
         .withOptionsFrom (decayRelay)
         .withOptionsFrom (releaseRelay)
         .withOptionsFrom (masterRelay)
+        .withOptionsFrom (articulationRelay)
+        .withOptionsFrom (dynamicsRelay)
+        .withOptionsFrom (vibDepthRelay)
+        .withOptionsFrom (vibRateRelay)
+        .withOptionsFrom (tuneRelay)
         .withOptionsFrom (fxReverbRelay)
         .withOptionsFrom (fxDelayRelay)
-        .withOptionsFrom (fxPitchRelay);
+        .withOptionsFrom (fxPitchRelay)
+        .withOptionsFrom (polyRelay)
+        .withOptionsFrom (rrRelay);
 }
 
 //==============================================================================
@@ -155,10 +194,17 @@ SynthlenKhmerEditor::SynthlenKhmerEditor (SynthlenKhmerProcessor& p)
     attachSlider ("decay",     decayRelay);
     attachSlider ("release",   releaseRelay);
     attachSlider ("master",    masterRelay);
+    attachSlider ("articulation", articulationRelay);
+    attachSlider ("dynamics",     dynamicsRelay);
+    attachSlider ("vibDepth",     vibDepthRelay);
+    attachSlider ("vibRate",      vibRateRelay);
+    attachSlider ("tune",         tuneRelay);
 
     attachToggle ("fxReverb", fxReverbRelay);
     attachToggle ("fxDelay",  fxDelayRelay);
     attachToggle ("fxPitch",  fxPitchRelay);
+    attachToggle ("poly",     polyRelay);
+    attachToggle ("rr",       rrRelay);
 
    #if HAS_WEB_UI
     // Resource provider serves the root URL ("/") as the main HTML page.
@@ -169,7 +215,7 @@ SynthlenKhmerEditor::SynthlenKhmerEditor (SynthlenKhmerProcessor& p)
                      "Run the bundle step (see BUILD.md) and rebuild.</h2>");
    #endif
 
-    setResizable (false, false);
+    setResizable (true, true);
     setSize (1180, 880);
 }
 

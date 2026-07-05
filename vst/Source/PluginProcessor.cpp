@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "Licensing.h"
 
 #include <algorithm>
 #include <vector>
@@ -128,6 +129,9 @@ SynthlenKhmerProcessor::SynthlenKhmerProcessor()
 {
     formatManager.registerBasicFormats();
 
+    // Check the machine-locked license once at startup.
+    licensed = Licensing::isLicensed();
+
     // Hook the shared (lock-free) parameter pointers used by the voices.
     sharedParams.attack    = apvts.getRawParameterValue ("attack");
     sharedParams.decay     = apvts.getRawParameterValue ("decay");
@@ -135,6 +139,14 @@ SynthlenKhmerProcessor::SynthlenKhmerProcessor()
     sharedParams.cutoff    = apvts.getRawParameterValue ("cutoff");
     sharedParams.resonance = apvts.getRawParameterValue ("resonance");
     sharedParams.pitch     = apvts.getRawParameterValue ("pitch");
+    sharedParams.articulation = apvts.getRawParameterValue ("articulation");
+    sharedParams.dynamics     = apvts.getRawParameterValue ("dynamics");
+    sharedParams.vibDepth     = apvts.getRawParameterValue ("vibDepth");
+    sharedParams.vibRate      = apvts.getRawParameterValue ("vibRate");
+    sharedParams.rr           = apvts.getRawParameterValue ("rr");
+    sharedParams.poly         = apvts.getRawParameterValue ("poly");
+    sharedParams.tune         = apvts.getRawParameterValue ("tune");
+    synth.params = &sharedParams;
 
     // Plenty of voices for polyphonic playing.
     for (int i = 0; i < 16; ++i)
@@ -182,6 +194,15 @@ SynthlenKhmerProcessor::createParameterLayout()
     params.push_back (std::make_unique<B> (juce::ParameterID { "fxReverb", 1 }, "FX Reverb", false));
     params.push_back (std::make_unique<B> (juce::ParameterID { "fxDelay",  1 }, "FX Delay",  false));
     params.push_back (std::make_unique<B> (juce::ParameterID { "fxPitch",  1 }, "FX Pitch",  false));
+
+    // PERFORMANCE tab
+    params.push_back (std::make_unique<B> (juce::ParameterID { "poly", 1 }, "Poly", true));
+    params.push_back (std::make_unique<B> (juce::ParameterID { "rr",   1 }, "Round Robin", false));
+    params.push_back (norm ("articulation", "Articulation", 1.0f)); // 0=LONG 0.5=SHORT 1=AUTO
+    params.push_back (norm ("dynamics",     "Dynamics",     0.8f));
+    params.push_back (norm ("vibDepth",     "Vibrato Depth", 0.0f));
+    params.push_back (norm ("vibRate",      "Vibrato Speed", 0.5f));
+    params.push_back (norm ("tune",         "Master Tune",   0.5f)); // 0.5 = A440, +/- 1 semitone
 
     // PRESET selector (sound bank).
     auto presetNames = getPresetNames();
@@ -536,6 +557,11 @@ void SynthlenKhmerProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     reverb.prepare (spec);
     delayLine.prepare (spec);
     delayLine.setMaximumDelayInSamples ((int) (sampleRate * 1.0));
+
+    // Output limiter: stops preset gain boosts / master volume from clipping.
+    limiter.setThreshold (-0.5f);  // dB
+    limiter.setRelease (60.0f);    // ms
+    limiter.prepare (spec);
 }
 
 void SynthlenKhmerProcessor::releaseResources() {}
@@ -584,6 +610,13 @@ void SynthlenKhmerProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     for (int bus = 0; bus < buses; ++bus)
         getBusBuffer (buffer, false, bus).clear();
 
+    // Unlicensed -> stay silent.
+    if (! licensed.load())
+    {
+        midi.clear();
+        return;
+    }
+
     // Merge notes coming from the on-screen piano (GUI) into the MIDI stream.
     midiCollector.removeNextBlockOfMessages (midi, mainBuffer.getNumSamples());
 
@@ -628,6 +661,9 @@ void SynthlenKhmerProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     if (apvts.getParameterAsValue ("fxReverb").getValue())
         reverb.process (ctx);
 
+    // Output limiter: transparent protection against clipping.
+    limiter.process (ctx);
+
     // Copy main output to the selected AUX bus (if any).
     if (auto* auxParam = apvts.getRawParameterValue ("auxOut"))
     {
@@ -651,6 +687,17 @@ void SynthlenKhmerProcessor::addMidiNote (bool isNoteOn, int midiNote, float vel
                  : juce::MidiMessage::noteOff (1, midiNote);
     msg.setTimeStamp (juce::Time::getMillisecondCounterHiRes() * 0.001);
     midiCollector.addMessageToQueue (msg);
+}
+
+//==============================================================================
+bool SynthlenKhmerProcessor::activateLicense (const juce::String& key)
+{
+    if (Licensing::activate (key))
+    {
+        licensed = true;
+        return true;
+    }
+    return false;
 }
 
 //==============================================================================

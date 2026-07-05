@@ -36,10 +36,17 @@ private:
     juce::WebSliderRelay decayRelay     { "decay" };
     juce::WebSliderRelay releaseRelay   { "release" };
     juce::WebSliderRelay masterRelay     { "master" };
+    juce::WebSliderRelay articulationRelay { "articulation" };
+    juce::WebSliderRelay dynamicsRelay     { "dynamics" };
+    juce::WebSliderRelay vibDepthRelay     { "vibDepth" };
+    juce::WebSliderRelay vibRateRelay      { "vibRate" };
+    juce::WebSliderRelay tuneRelay         { "tune" };
 
     juce::WebToggleButtonRelay fxReverbRelay { "fxReverb" };
     juce::WebToggleButtonRelay fxDelayRelay  { "fxDelay" };
     juce::WebToggleButtonRelay fxPitchRelay  { "fxPitch" };
+    juce::WebToggleButtonRelay polyRelay     { "poly" };
+    juce::WebToggleButtonRelay rrRelay       { "rr" };
 
     // WebView must be constructed AFTER the relays above.
     juce::WebBrowserComponent webView { makeOptions() };
