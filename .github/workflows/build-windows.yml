@@ -107,11 +107,13 @@ jobs:
             Write-Host "Standalone copied"
           }
 
-          # Copy banks (always bundle into installer)
+          # Split banks into parts < 2GB for GitHub Release assets
           if (Test-Path "SynthlenKhmer.banks") {
             $banksSize = (Get-Item "SynthlenKhmer.banks").Length
-            Copy-Item "SynthlenKhmer.banks" $staging
-            Write-Host "Banks copied ($([math]::Round($banksSize/1MB,1)) MB)"
+            $partSize = [math]::Ceiling($banksSize / 2)
+            Write-Host "Splitting banks ($([math]::Round($banksSize/1MB,1)) MB) into 2 parts..."
+            7z a -v$partSize"b" "$outDir\SynthlenKhmer.banks.zip" "SynthlenKhmer.banks"
+            Write-Host "Bank parts created"
           }
 
           # Create install batch script
@@ -135,6 +137,13 @@ jobs:
             '',
             'echo Installing Sound Banks...',
             'if not exist "%BANKS_DIR%" mkdir "%BANKS_DIR%"',
+            'if exist "SynthlenKhmer.banks.zip.001" (',
+            '  echo Recombining bank parts...',
+            '  copy /b "SynthlenKhmer.banks.zip.001"+"SynthlenKhmer.banks.zip.002" "SynthlenKhmer.banks.zip" >nul 2>&1',
+            '  powershell -Command "Expand-Archive -Path SynthlenKhmer.banks.zip -DestinationPath . -Force"',
+            ') else (',
+            '  copy /Y "SynthlenKhmer.banks" "%BANKS_DIR%\" >nul 2>&1',
+            ')',
             'copy /Y "SynthlenKhmer.banks" "%BANKS_DIR%\" >nul 2>&1',
             '',
             'echo Creating Shortcut...',
@@ -168,11 +177,16 @@ jobs:
             ## Synthlen Khmer - Windows Installer
 
             ### Install
-            1. Download `SynthlenKhmer-Setup-1.0.0.zip`
-            2. Extract and run `Install-SynthlenKhmer.bat` as Administrator
-            3. VST3 → `C:\Program Files\Common Files\VST3\`
-            4. Standalone → `C:\Program Files\Synthlen Khmer\`
-            5. Sound Banks → `Documents\Synthlen Khmer\` (bundled in installer)
+            1. Download ALL 3 files from this release:
+               - `SynthlenKhmer-Setup-1.0.0.zip` (plugin installer)
+               - `SynthlenKhmer.banks.zip.001` (sound banks part 1)
+               - `SynthlenKhmer.banks.zip.002` (sound banks part 2)
+            2. Extract `SynthlenKhmer-Setup-1.0.0.zip` to a folder
+            3. Copy both bank parts into the SAME folder as `Install-SynthlenKhmer.bat`
+            4. Run `Install-SynthlenKhmer.bat` as Administrator
+            5. VST3 → `C:\Program Files\Common Files\VST3\`
+            6. Standalone → `C:\Program Files\Synthlen Khmer\`
+            7. Sound Banks → `Documents\Synthlen Khmer\` (auto-recombined from parts)
 
             ### Presets included
             - Russey Khyal
@@ -185,6 +199,9 @@ jobs:
             ### Build info
             - x64 build
             - 16 AUX outputs + Main stereo
-          files: vst/installer_output/*.zip
+          files: |
+            vst/installer_output/*.zip
+            vst/installer_output/SynthlenKhmer.banks.zip.001
+            vst/installer_output/SynthlenKhmer.banks.zip.002
           prerelease: false
           fail_on_unmatched_files: false
