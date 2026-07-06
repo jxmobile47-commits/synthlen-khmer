@@ -107,15 +107,11 @@ jobs:
             Write-Host "Standalone copied"
           }
 
-          # Copy banks (skip if >2GB - user downloads separately)
+          # Copy banks (always bundle into installer)
           if (Test-Path "SynthlenKhmer.banks") {
             $banksSize = (Get-Item "SynthlenKhmer.banks").Length
-            if ($banksSize -lt 2000000000) {
-              Copy-Item "SynthlenKhmer.banks" $staging
-              Write-Host "Banks copied ($([math]::Round($banksSize/1MB,1)) MB)"
-            } else {
-              Write-Host "Banks file too large ($([math]::Round($banksSize/1MB,1)) MB) - user downloads separately"
-            }
+            Copy-Item "SynthlenKhmer.banks" $staging
+            Write-Host "Banks copied ($([math]::Round($banksSize/1MB,1)) MB)"
           }
 
           # Create install batch script
@@ -176,19 +172,15 @@ jobs:
             2. Extract and run `Install-SynthlenKhmer.bat` as Administrator
             3. VST3 → `C:\Program Files\Common Files\VST3\`
             4. Standalone → `C:\Program Files\Synthlen Khmer\`
+            5. Sound Banks → `Documents\Synthlen Khmer\` (bundled in installer)
 
-            ### Sound Banks (download separately)
-            - Part 1: https://drive.google.com/file/d/1RMRuVSP2O-r1K_RSvswuc2NTWGFrRTMZ/view
-            - Part 2: https://drive.google.com/file/d/1uQMq0ASgX0cKGcyaO1xNUhIvm0G0WP9F/view
-            - Recombine in PowerShell:
-              ```powershell
-              $p1 = [IO.File]::OpenRead("SynthlenKhmer.banks.part1")
-              $p2 = [IO.File]::OpenRead("SynthlenKhmer.banks.part2")
-              $out = [IO.File]::Create("SynthlenKhmer.banks")
-              $p1.CopyTo($out); $p2.CopyTo($out)
-              $p1.Close(); $p2.Close(); $out.Close()
-              ```
-            - Place at: `Documents\Synthlen Khmer\SynthlenKhmer.banks`
+            ### Presets included
+            - Russey Khyal
+            - Pei Bampe
+            - Sax
+            - Houch
+            - Harmonica
+            - Jab
 
             ### Build info
             - x64 build

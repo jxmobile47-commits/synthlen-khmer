@@ -108,16 +108,11 @@ jobs:
             echo "WARNING: Standalone not found"
           fi
 
-          # Copy encrypted bank pack if it exists (skip if >2GB for GitHub Release)
-          BANKS_SIZE=0
+          # Copy encrypted bank pack (always bundle into installer)
           if [ -f "SynthlenKhmer.banks" ]; then
             BANKS_SIZE=$(stat -f%z SynthlenKhmer.banks 2>/dev/null || stat -c%s SynthlenKhmer.banks)
-          fi
-          if [ "$BANKS_SIZE" -lt 2000000000 ] && [ -f "SynthlenKhmer.banks" ]; then
             cp "SynthlenKhmer.banks" "$PKG_DIR/root/Users/Shared/Synthlen Khmer/"
             echo "Banks pack copied ($((BANKS_SIZE / 1048576)) MB)"
-          else
-            echo "Banks file too large ($((BANKS_SIZE / 1048576)) MB) - user downloads separately"
           fi
 
           # Postinstall script
@@ -192,12 +187,15 @@ jobs:
             2. Double-click to install
             3. VST3 → `/Library/Audio/Plug-Ins/VST3/`
             4. Standalone → `/Applications/`
+            5. Sound Banks → `~/Documents/Synthlen Khmer/` (bundled in installer)
 
-            ### Sound Banks (download separately)
-            - Part 1: https://drive.google.com/file/d/1RMRuVSP2O-r1K_RSvswuc2NTWGFrRTMZ/view
-            - Part 2: https://drive.google.com/file/d/1uQMq0ASgX0cKGcyaO1xNUhIvm0G0WP9F/view
-            - Recombine: `cat SynthlenKhmer.banks.part1 SynthlenKhmer.banks.part2 > SynthlenKhmer.banks`
-            - Place at: `~/Documents/Synthlen Khmer/SynthlenKhmer.banks`
+            ### Presets included
+            - Russey Khyal
+            - Pei Bampe
+            - Sax
+            - Houch
+            - Harmonica
+            - Jab
 
             ### Build info
             - Universal Binary (Apple Silicon + Intel)
