@@ -108,30 +108,29 @@ jobs:
             echo "WARNING: Standalone not found"
           fi
 
-          # Copy encrypted bank pack (always bundle into installer)
+          # Do NOT bundle banks into .pkg (>2GB GitHub limit) - split and upload separately
           if [ -f "SynthlenKhmer.banks" ]; then
             BANKS_SIZE=$(stat -f%z SynthlenKhmer.banks 2>/dev/null || stat -c%s SynthlenKhmer.banks)
-            cp "SynthlenKhmer.banks" "$PKG_DIR/root/Users/Shared/Synthlen Khmer/"
-            echo "Banks pack copied ($((BANKS_SIZE / 1048576)) MB)"
+            PART_SIZE=$((BANKS_SIZE / 2 + 1))
+            echo "Splitting banks ($((BANKS_SIZE / 1048576)) MB) into 2 parts..."
+            split -b $PART_SIZE SynthlenKhmer.banks installer_output/SynthlenKhmer.banks.part
+            echo "Bank parts created"
+            ls -lh installer_output/SynthlenKhmer.banks.part*
           fi
 
-          # Postinstall script
+          # Postinstall script (no banks in pkg - user places manually)
           cat > "$PKG_DIR/scripts/postinstall" << 'SCRIPT'
           #!/bin/bash
-          # Copy banks to user Documents on first launch via launch agent
-          BANKS_SRC="/Users/Shared/Synthlen Khmer/SynthlenKhmer.banks"
-          if [ -f "$BANKS_SRC" ]; then
-            for USER_HOME in /Users/*; do
-              USER_NAME=$(basename "$USER_HOME")
-              if [ "$USER_NAME" = "Shared" ] || [ "$USER_NAME" = "." ] || [ "$USER_NAME" = ".." ]; then
-                continue
-              fi
-              DEST="$USER_HOME/Documents/Synthlen Khmer"
-              mkdir -p "$DEST"
-              cp "$BANKS_SRC" "$DEST/" 2>/dev/null || true
-              chown -R "$USER_NAME:staff" "$DEST" 2>/dev/null || true
-            done
-          fi
+          # Create banks directory for user to place SynthlenKhmer.banks
+          for USER_HOME in /Users/*; do
+            USER_NAME=$(basename "$USER_HOME")
+            if [ "$USER_NAME" = "Shared" ] || [ "$USER_NAME" = "." ] || [ "$USER_NAME" = ".." ]; then
+              continue
+            fi
+            DEST="$USER_HOME/Documents/Synthlen Khmer"
+            mkdir -p "$DEST"
+            chown -R "$USER_NAME:staff" "$DEST" 2>/dev/null || true
+          done
           SCRIPT
           chmod +x "$PKG_DIR/scripts/postinstall"
 
@@ -183,11 +182,18 @@ jobs:
             ## Synthlen Khmer - macOS Installer
 
             ### Install
-            1. Download `SynthlenKhmer-Setup-1.0.0.pkg`
-            2. Double-click to install
-            3. VST3 → `/Library/Audio/Plug-Ins/VST3/`
-            4. Standalone → `/Applications/`
-            5. Sound Banks → `~/Documents/Synthlen Khmer/` (bundled in installer)
+            1. Download ALL 3 files from this release:
+               - `SynthlenKhmer-Setup-1.0.0.pkg` (plugin installer)
+               - `SynthlenKhmer.banks.partaa` (sound banks part 1)
+               - `SynthlenKhmer.banks.partab` (sound banks part 2)
+            2. Double-click `SynthlenKhmer-Setup-1.0.0.pkg` to install plugin
+            3. Recombine bank parts in Terminal:
+               ```bash
+               cat SynthlenKhmer.banks.partaa SynthlenKhmer.banks.partab > SynthlenKhmer.banks
+               ```
+            4. Place at: `~/Documents/Synthlen Khmer/SynthlenKhmer.banks`
+            5. VST3 → `/Library/Audio/Plug-Ins/VST3/`
+            6. Standalone → `/Applications/`
 
             ### Presets included
             - Russey Khyal
@@ -200,6 +206,9 @@ jobs:
             ### Build info
             - Universal Binary (Apple Silicon + Intel)
             - 16 AUX outputs + Main stereo
-          files: vst/installer_output/SynthlenKhmer-Setup-*.pkg
+          files: |
+            vst/installer_output/SynthlenKhmer-Setup-*.pkg
+            vst/installer_output/SynthlenKhmer.banks.partaa
+            vst/installer_output/SynthlenKhmer.banks.partab
           prerelease: false
           fail_on_unmatched_files: false
