@@ -19,14 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
-
-      - name: Install gdown
-        run: pip install gdown
+          lfs: true
 
       - name: Bundle UI
         shell: pwsh
@@ -42,16 +36,11 @@ jobs:
             Write-Host "WARNING: synthlen-khmer.html not found"
           }
 
-      - name: Download & recombine sound banks
+      - name: Recombine sound banks from LFS
         shell: pwsh
         working-directory: vst
         run: |
-          Write-Host "Downloading bank pack part 1..."
-          gdown "1RMRuVSP2O-r1K_RSvswuc2NTWGFrRTMZ" -O "SynthlenKhmer.banks.part1"
-          Write-Host "Downloading bank pack part 2..."
-          gdown "1uQMq0ASgX0cKGcyaO1xNUhIvm0G0WP9F" -O "SynthlenKhmer.banks.part2"
-
-          Write-Host "Recombining..."
+          Write-Host "Recombining bank from LFS parts..."
           $p1 = [System.IO.File]::OpenRead("SynthlenKhmer.banks.part1")
           $p2 = [System.IO.File]::OpenRead("SynthlenKhmer.banks.part2")
           $out = [System.IO.File]::Create("SynthlenKhmer.banks")
@@ -61,8 +50,7 @@ jobs:
 
           $size = (Get-Item "SynthlenKhmer.banks").Length
           Write-Host "Combined: $([math]::Round($size/1MB,1)) MB"
-
-          Remove-Item "SynthlenKhmer.banks.part1", "SynthlenKhmer.banks.part2" -Force
+          if ($size -lt 100MB) { throw "Bank file too small - LFS checkout may have failed" }
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1

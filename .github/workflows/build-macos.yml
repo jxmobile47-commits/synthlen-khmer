@@ -19,34 +19,32 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Install dependencies
         run: |
           brew install cmake ninja
-          pip3 install --break-system-packages gdown
 
       - name: Bundle UI
         shell: bash
         working-directory: vst
         run: bash bundle-ui.sh
 
-      - name: Download & recombine sound banks
+      - name: Recombine sound banks from LFS
         shell: bash
         working-directory: vst
         run: |
-          echo "Downloading bank pack part 1 from Google Drive..."
-          gdown "1RMRuVSP2O-r1K_RSvswuc2NTWGFrRTMZ" -O SynthlenKhmer.banks.part1 || \
-            curl -L "https://drive.google.com/uc?export=download&id=1RMRuVSP2O-r1K_RSvswuc2NTWGFrRTMZ" -o SynthlenKhmer.banks.part1
-
-          echo "Downloading bank pack part 2 from Google Drive..."
-          gdown "1uQMq0ASgX0cKGcyaO1xNUhIvm0G0WP9F" -O SynthlenKhmer.banks.part2 || \
-            curl -L "https://drive.google.com/uc?export=download&id=1uQMq0ASgX0cKGcyaO1xNUhIvm0G0WP9F" -o SynthlenKhmer.banks.part2
-
-          echo "Recombining..."
+          echo "Recombining bank from LFS parts..."
           cat SynthlenKhmer.banks.part1 SynthlenKhmer.banks.part2 > SynthlenKhmer.banks
 
           SIZE=$(stat -f%z SynthlenKhmer.banks 2>/dev/null || stat -c%s SynthlenKhmer.banks)
           echo "Combined banks file: $SIZE bytes ($((SIZE / 1048576)) MB)"
+
+          if [ "$SIZE" -lt 104857600 ]; then
+            echo "ERROR: Bank file too small - LFS checkout may have failed"
+            exit 1
+          fi
 
           # Verify magic header
           MAGIC=$(head -c 6 SynthlenKhmer.banks)
@@ -54,9 +52,6 @@ jobs:
           if [ "$MAGIC" != "SYNKB1" ]; then
             echo "WARNING: Bad magic header - banks file may be corrupt"
           fi
-
-          # Clean up parts
-          rm -f SynthlenKhmer.banks.part1 SynthlenKhmer.banks.part2
 
       - name: Configure CMake
         shell: bash
