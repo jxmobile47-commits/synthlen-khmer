@@ -24,7 +24,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install cmake ninja
+          brew install cmake ninja p7zip
 
       - name: Bundle UI
         shell: bash
@@ -142,25 +142,39 @@ jobs:
           FINAL_PKG="$PKG_DIR/SynthlenKhmer-Setup-$VERSION.pkg"
           ls -lh "$FINAL_PKG"
 
-          # GitHub Release has a 2 GB per-file limit. The .pkg includes the
-          # bank inside (~2.5 GB), so split it into <2GB parts for release upload.
+          # GitHub Release has a 2 GB per-file limit.
+          # Try compressing the .pkg with 7z (LZMA2 max) to get under 2GB.
+          # If still over, split into parts.
           PKG_SIZE=$(stat -f%z "$FINAL_PKG" 2>/dev/null || stat -c%s "$FINAL_PKG")
           echo "Final PKG size: $((PKG_SIZE / 1048576)) MB"
+
           if [ "$PKG_SIZE" -gt 1900000000 ]; then
-            echo "PKG exceeds 1.9 GB - splitting into parts for GitHub Release..."
-            split -b 1900m "$FINAL_PKG" "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.pkg.part"
-            # Remove the full pkg so it doesn't get uploaded to GitHub
+            echo "PKG over 1.9 GB - compressing with 7z (max)..."
+            7z a -t7z -mx=9 -mfb=273 "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.7z" "$FINAL_PKG"
             rm -f "$FINAL_PKG"
-            ls -lh "$PKG_DIR"/SynthlenKhmer-Setup-$VERSION.pkg.part*
+            SEVENZ_SIZE=$(stat -f%z "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.7z" 2>/dev/null || stat -c%s "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.7z")
+            echo "7z compressed size: $((SEVENZ_SIZE / 1048576)) MB"
+
+            if [ "$SEVENZ_SIZE" -gt 1900000000 ]; then
+              echo "Still over 1.9 GB - splitting 7z into parts..."
+              split -b 1900m "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.7z" "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.7z.part"
+              rm -f "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.7z"
+              ls -lh "$PKG_DIR"/SynthlenKhmer-Setup-$VERSION.7z.part*
+            else
+              echo "7z under 2 GB - single file!"
+              ls -lh "$PKG_DIR"/SynthlenKhmer-Setup-$VERSION.7z
+            fi
           else
-            echo "PKG under limit - no split needed."
+            echo "PKG under limit - no compression needed."
           fi
 
       - name: Upload macOS Installer
         uses: actions/upload-artifact@v4
         with:
           name: SynthlenKhmer-macOS-Installer
-          path: vst/installer_output/SynthlenKhmer-Setup-*.pkg*
+          path: |
+            vst/installer_output/SynthlenKhmer-Setup-*.pkg
+            vst/installer_output/SynthlenKhmer-Setup-*.7z*
           if-no-files-found: warn
 
       - name: Upload VST3
@@ -187,17 +201,21 @@ jobs:
 
             The sound bank is now bundled inside the VST3 plugin - install once, no separate bank download needed.
 
-            ### Install
-            1. Download BOTH `.pkg.part*` files from this release
-            2. Recombine them in Terminal:
-               ```bash
-               cat SynthlenKhmer-Setup-1.0.0.pkg.part* > SynthlenKhmer-Setup-1.0.0.pkg
-               ```
+            ### Install (single .7z file)
+            1. Download `SynthlenKhmer-Setup-1.0.0.7z`
+            2. Extract with 7z: `7z x SynthlenKhmer-Setup-1.0.0.7z`
+               (Install p7zip first: `brew install p7zip`)
             3. Double-click `SynthlenKhmer-Setup-1.0.0.pkg` to install
             4. Done! Bank is bundled in VST3 and copied to shared location:
                - VST3 → `/Library/Audio/Plug-Ins/VST3/Synthlen Khmer.vst3`
                - Standalone → `/Applications/Synthlen Khmer.app`
                - Banks → `/Library/Application Support/Synthlen Khmer/`
+
+            ### Install (if split .7z.part* files)
+            1. Download ALL `.7z.part*` files
+            2. Recombine: `cat SynthlenKhmer-Setup-1.0.0.7z.part* > SynthlenKhmer-Setup-1.0.0.7z`
+            3. Extract: `7z x SynthlenKhmer-Setup-1.0.0.7z` (install p7zip: `brew install p7zip`)
+            4. Double-click `SynthlenKhmer-Setup-1.0.0.pkg` to install
 
             ### Presets included
             - Russey Khyal
@@ -211,6 +229,8 @@ jobs:
             - Universal Binary (Apple Silicon + Intel)
             - 16 AUX outputs + Main stereo
           files: |
-            vst/installer_output/SynthlenKhmer-Setup-*.pkg*
+            vst/installer_output/SynthlenKhmer-Setup-*.pkg
+            vst/installer_output/SynthlenKhmer-Setup-*.7z
+            vst/installer_output/SynthlenKhmer-Setup-*.7z.part*
           prerelease: false
           fail_on_unmatched_files: false
