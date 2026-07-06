@@ -144,31 +144,18 @@ set(BANK_PACK "${CMAKE_CURRENT_SOURCE_DIR}/SynthlenKhmer.banks")
 if(EXISTS "${BANK_PACK}")
     message(STATUS "Found bank pack, will bundle with plugin: ${BANK_PACK}")
 
-    # --- VST3: skip bundling (bank is in Standalone .app, copied to shared location by installer) ---
-    # VST3 findPackFile() checks commonApplicationDataDirectory which is
-    # /Library/Application Support/Synthlen Khmer/ on macOS or
-    # C:\ProgramData\Synthlen Khmer\ on Windows.
-
-    # --- Standalone: copy next to the executable (Windows) or Resources (macOS) ---
-    if(TARGET SynthlenKhmer_Standalone)
-        if(APPLE)
-            # macOS: put in Contents/Resources to avoid codesign issues
-            add_custom_command(TARGET SynthlenKhmer_Standalone POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E make_directory
-                    "$<TARGET_FILE_DIR:SynthlenKhmer_Standalone>/../Resources"
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                    "${BANK_PACK}"
-                    "$<TARGET_FILE_DIR:SynthlenKhmer_Standalone>/../Resources/SynthlenKhmer.banks"
-                COMMENT "Bundling SynthlenKhmer.banks into Standalone Resources")
-        else()
-            # Windows: put next to .exe
-            add_custom_command(TARGET SynthlenKhmer_Standalone POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                    "${BANK_PACK}"
-                    "$<TARGET_FILE_DIR:SynthlenKhmer_Standalone>/SynthlenKhmer.banks"
-                COMMENT "Bundling SynthlenKhmer.banks next to Standalone app")
-        endif()
+    # --- VST3: copy into Contents/Resources of the built .vst3 bundle ---
+    if(TARGET SynthlenKhmer_VST3)
+        add_custom_command(TARGET SynthlenKhmer_VST3 POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory
+                "$<TARGET_FILE_DIR:SynthlenKhmer_VST3>/../Resources"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${BANK_PACK}"
+                "$<TARGET_FILE_DIR:SynthlenKhmer_VST3>/../Resources/SynthlenKhmer.banks"
+            COMMENT "Bundling SynthlenKhmer.banks into VST3 Resources")
     endif()
+
+    # --- Standalone: skip bundling (finds bank via shared location copied by installer) ---
 else()
     message(STATUS "No SynthlenKhmer.banks pack found - skipping bundle step")
 endif()

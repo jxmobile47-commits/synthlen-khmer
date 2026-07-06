@@ -106,16 +106,17 @@ if exist "%PAYLOAD%\Standalone\Synthlen Khmer.exe" (
 
 echo.
 echo  [3/3] Installing sound banks (2.4 GB, please wait)...
-if exist "%PAYLOAD%\Standalone\SynthlenKhmer.banks" (
-    copy "%PAYLOAD%\Standalone\SynthlenKhmer.banks" "%APPDEST%\" /Y >nul
-    if not exist "%BANKSDEST%" mkdir "%BANKSDEST%"
-    copy "%PAYLOAD%\Standalone\SynthlenKhmer.banks" "%BANKSDEST%\" /Y >nul
+set "VST3BANK=%VST3DEST%\Synthlen Khmer.vst3\Contents\Resources\SynthlenKhmer.banks"
+if exist "%VST3BANK%" (
     set "SHAREDDIR=%ProgramData%\Synthlen Khmer"
     if not exist "%SHAREDDIR%" mkdir "%SHAREDDIR%"
-    copy "%PAYLOAD%\Standalone\SynthlenKhmer.banks" "%SHAREDDIR%\" /Y >nul
-    echo  -^> Installed sound banks to app folder, Documents, and ProgramData
+    copy "%VST3BANK%" "%SHAREDDIR%\" /Y >nul
+    if not exist "%BANKSDEST%" mkdir "%BANKSDEST%"
+    copy "%VST3BANK%" "%BANKSDEST%\" /Y >nul
+    copy "%VST3BANK%" "%APPDEST%\" /Y >nul
+    echo  -^> Copied banks from VST3 to ProgramData, Documents, and app folder
 ) else (
-    echo  -^> Sound banks not found, skipping
+    echo  -^> Sound banks not found in VST3, skipping
 )
 
 echo.

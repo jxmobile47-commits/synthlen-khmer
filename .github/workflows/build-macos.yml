@@ -108,22 +108,22 @@ jobs:
             echo "WARNING: Standalone not found"
           fi
 
-          # Bank is bundled ONLY inside the Standalone .app (not VST3) to keep
-          # installer size ~2.5 GB instead of ~5 GB. The postinstall script
-          # copies it to /Library/Application Support/ for VST3 to find.
-          echo "Verifying bank is bundled inside Standalone .app..."
-          ls -lh "$PKG_DIR/root/Applications/Synthlen Khmer.app/Contents/Resources/SynthlenKhmer.banks" 2>/dev/null \
-            && echo "OK: bank bundled in Standalone .app" || echo "WARN: bank not found in .app"
+          # Bank is bundled ONLY inside the VST3 bundle (not Standalone) to keep
+          # installer size ~2.5 GB. The postinstall script copies it to shared
+          # location for the Standalone app to find.
+          echo "Verifying bank is bundled inside VST3..."
+          ls -lh "$PKG_DIR/root/Library/Audio/Plug-Ins/VST3/Synthlen Khmer.vst3/Contents/Resources/SynthlenKhmer.banks" 2>/dev/null \
+            && echo "OK: bank bundled in VST3" || echo "WARN: bank not found in VST3"
 
-          # Postinstall: copy bank from .app to shared location so VST3 can find it.
+          # Postinstall: copy bank from VST3 to shared location so Standalone can find it.
           cat > "$PKG_DIR/scripts/postinstall" << 'SCRIPT'
           #!/bin/bash
-          # Bank is bundled inside Standalone .app. Copy to shared location for VST3.
+          # Bank is bundled inside VST3. Copy to shared location for Standalone.
           SHARED_DIR="/Library/Application Support/Synthlen Khmer"
           mkdir -p "$SHARED_DIR"
-          APP_BANK="/Applications/Synthlen Khmer.app/Contents/Resources/SynthlenKhmer.banks"
-          if [ -f "$APP_BANK" ]; then
-            cp "$APP_BANK" "$SHARED_DIR/SynthlenKhmer.banks"
+          VST3_BANK="/Library/Audio/Plug-Ins/VST3/Synthlen Khmer.vst3/Contents/Resources/SynthlenKhmer.banks"
+          if [ -f "$VST3_BANK" ]; then
+            cp "$VST3_BANK" "$SHARED_DIR/SynthlenKhmer.banks"
             echo "Copied bank to $SHARED_DIR"
           fi
           exit 0
