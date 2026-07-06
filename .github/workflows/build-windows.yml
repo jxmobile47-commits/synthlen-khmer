@@ -158,9 +158,13 @@ jobs:
           Write-Host "Installer size: $([math]::Round($zipSize/1MB,1)) MB"
           if ($zipSize -gt 1900000000) {
             Write-Host "Splitting into <2GB parts..."
-            $partSize = "1900m"
-            7z a -v$partSize "$outDir\SynthlenKhmer-Setup-$version.zip" "$outDir\SynthlenKhmer-Setup-$version.zip"
+            7z a -v1900m "$outDir\SynthlenKhmer-Setup-$version.split.zip" "$outDir\SynthlenKhmer-Setup-$version.zip"
             Remove-Item "$outDir\SynthlenKhmer-Setup-$version.zip" -Force
+            # Rename parts to .zip.001, .zip.002 etc
+            Get-ChildItem "$outDir\SynthlenKhmer-Setup-$version.split.zip.*" | ForEach-Object {
+              $newName = $_.Name -replace '\.split\.zip\.(\d+)', '.zip.$1'
+              Rename-Item $_.FullName $newName
+            }
             Write-Host "Split into parts"
           }
 
