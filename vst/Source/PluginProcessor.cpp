@@ -146,6 +146,7 @@ SynthlenKhmerProcessor::SynthlenKhmerProcessor()
     sharedParams.rr           = apvts.getRawParameterValue ("rr");
     sharedParams.poly         = apvts.getRawParameterValue ("poly");
     sharedParams.tune         = apvts.getRawParameterValue ("tune");
+    sharedParams.glide        = apvts.getRawParameterValue ("glide");
     synth.params = &sharedParams;
 
     // Plenty of voices for polyphonic playing.
@@ -203,6 +204,7 @@ SynthlenKhmerProcessor::createParameterLayout()
     params.push_back (norm ("vibDepth",     "Vibrato Depth", 0.0f));
     params.push_back (norm ("vibRate",      "Vibrato Speed", 0.5f));
     params.push_back (norm ("tune",         "Master Tune",   0.5f)); // 0.5 = A440, +/- 1 semitone
+    params.push_back (norm ("glide",        "Glide",         0.0f)); // 0 = off, 1 = 500 ms portamento
 
     // PRESET selector (sound bank).
     auto presetNames = getPresetNames();
@@ -620,6 +622,33 @@ void SynthlenKhmerProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // Merge notes coming from the on-screen piano (GUI) into the MIDI stream.
     midiCollector.removeNextBlockOfMessages (midi, mainBuffer.getNumSamples());
 
+    // MIDI Learn: map incoming CCs to armed/learned parameters.
+    for (const auto meta : midi)
+    {
+        const auto msg = meta.getMessage();
+        if (! msg.isController())
+            continue;
+        const int cc = msg.getControllerNumber();
+        if (cc == 1 || cc == 64) // reserved: mod wheel, sustain
+            continue;
+
+        juce::String target;
+        {
+            const juce::ScopedLock sl (midiLearnLock);
+            if (midiLearnArmedParam.isNotEmpty())
+            {
+                midiCcMap[cc] = midiLearnArmedParam;
+                midiLearnArmedParam.clear();
+            }
+            auto it = midiCcMap.find (cc);
+            if (it != midiCcMap.end())
+                target = it->second;
+        }
+        if (target.isNotEmpty())
+            if (auto* p = apvts.getParameter (target))
+                p->setValueNotifyingHost ((float) msg.getControllerValue() / 127.0f);
+    }
+
     // Render the sampler into the main bus.
     synth.renderNextBlock (mainBuffer, midi, 0, mainBuffer.getNumSamples());
 
@@ -698,6 +727,93 @@ bool SynthlenKhmerProcessor::activateLicense (const juce::String& key)
         return true;
     }
     return false;
+}
+
+//==============================================================================
+// User presets: full APVTS state saved as XML in Documents/Synthlen Khmer.
+juce::File SynthlenKhmerProcessor::userPresetsDir()
+{
+    auto dir = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory)
+                   .getChildFile ("Synthlen Khmer")
+                   .getChildFile ("User Presets");
+    dir.createDirectory();
+    return dir;
+}
+
+bool SynthlenKhmerProcessor::saveUserPreset (const juce::String& name)
+{
+    auto safe = juce::File::createLegalFileName (name.trim());
+    if (safe.isEmpty())
+        return false;
+    if (auto xml = apvts.copyState().createXml())
+        return xml->writeTo (userPresetsDir().getChildFile (safe + ".skpreset"));
+    return false;
+}
+
+bool SynthlenKhmerProcessor::loadUserPreset (const juce::String& name)
+{
+    auto f = userPresetsDir().getChildFile (juce::File::createLegalFileName (name.trim()) + ".skpreset");
+    if (! f.existsAsFile())
+        return false;
+    if (auto xml = juce::parseXML (f))
+    {
+        auto tree = juce::ValueTree::fromXml (*xml);
+        if (! tree.isValid())
+            return false;
+        apvts.replaceState (tree);
+        // Reload the sample bank for the restored preset choice.
+        if (auto* p = apvts.getParameter ("preset"))
+        {
+            const int idx = (int) std::round (p->getValue() * (getPresetNames().size() - 1));
+            loadBankSamples (getPresetNames()[juce::jlimit (0, getPresetNames().size() - 1, idx)]);
+        }
+        return true;
+    }
+    return false;
+}
+
+bool SynthlenKhmerProcessor::deleteUserPreset (const juce::String& name)
+{
+    return userPresetsDir()
+        .getChildFile (juce::File::createLegalFileName (name.trim()) + ".skpreset")
+        .deleteFile();
+}
+
+juce::StringArray SynthlenKhmerProcessor::getUserPresetNames()
+{
+    juce::StringArray names;
+    for (auto& f : userPresetsDir().findChildFiles (juce::File::findFiles, false, "*.skpreset"))
+        names.add (f.getFileNameWithoutExtension());
+    names.sortNatural();
+    return names;
+}
+
+//==============================================================================
+// MIDI Learn
+void SynthlenKhmerProcessor::armMidiLearn (const juce::String& paramId)
+{
+    const juce::ScopedLock sl (midiLearnLock);
+    midiLearnArmedParam = paramId;
+}
+
+void SynthlenKhmerProcessor::clearMidiLearn (const juce::String& paramId)
+{
+    const juce::ScopedLock sl (midiLearnLock);
+    if (paramId.isEmpty())
+        midiCcMap.clear();
+    else
+        for (auto it = midiCcMap.begin(); it != midiCcMap.end();)
+            it = (it->second == paramId) ? midiCcMap.erase (it) : std::next (it);
+    midiLearnArmedParam.clear();
+}
+
+juce::String SynthlenKhmerProcessor::getMidiLearnMappings() const
+{
+    const juce::ScopedLock sl (midiLearnLock);
+    juce::StringArray out;
+    for (const auto& [cc, id] : midiCcMap)
+        out.add (juce::String (cc) + ":" + id);
+    return out.joinIntoString (";");
 }
 
 //==============================================================================

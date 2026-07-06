@@ -62,6 +62,17 @@ public:
     // Loads the bundled sound bank for a preset AND applies its knob snapshot.
     void selectPreset (const juce::String& presetName);
 
+    // ----- User presets (save/load full knob state to disk) ------------------
+    bool saveUserPreset (const juce::String& name);
+    bool loadUserPreset (const juce::String& name);
+    bool deleteUserPreset (const juce::String& name);
+    static juce::StringArray getUserPresetNames();
+
+    // ----- MIDI Learn ---------------------------------------------------------
+    void armMidiLearn (const juce::String& paramId);   // next CC maps to this param
+    void clearMidiLearn (const juce::String& paramId);
+    juce::String getMidiLearnMappings() const;          // "cc:param;cc:param"
+
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
@@ -106,6 +117,13 @@ private:
     float  currentPresetGain { 1.0f };
 
     std::atomic<bool> licensed { false };
+
+    // MIDI Learn state: CC number -> parameter ID.
+    juce::CriticalSection midiLearnLock;
+    std::map<int, juce::String> midiCcMap;
+    juce::String midiLearnArmedParam;    // non-empty = waiting for a CC
+
+    static juce::File userPresetsDir();
 
     void applyFxParameters();
 

@@ -143,6 +143,67 @@ juce::WebBrowserComponent::Options SynthlenKhmerEditor::makeOptions()
                     ok = processorRef.activateLicense (args[0].toString());
                 completion (juce::var (ok));
             })
+        // User presets: save / load / delete / list.
+        .withNativeFunction ("saveUserPreset",
+            [this] (const juce::Array<juce::var>& args,
+                    juce::WebBrowserComponent::NativeFunctionCompletion completion)
+            {
+                bool ok = false;
+                if (args.size() >= 1)
+                    ok = processorRef.saveUserPreset (args[0].toString());
+                completion (juce::var (ok));
+            })
+        .withNativeFunction ("loadUserPreset",
+            [this] (const juce::Array<juce::var>& args,
+                    juce::WebBrowserComponent::NativeFunctionCompletion completion)
+            {
+                bool ok = false;
+                if (args.size() >= 1)
+                    ok = processorRef.loadUserPreset (args[0].toString());
+                completion (juce::var (ok));
+            })
+        .withNativeFunction ("deleteUserPreset",
+            [this] (const juce::Array<juce::var>& args,
+                    juce::WebBrowserComponent::NativeFunctionCompletion completion)
+            {
+                bool ok = false;
+                if (args.size() >= 1)
+                    ok = processorRef.deleteUserPreset (args[0].toString());
+                completion (juce::var (ok));
+            })
+        .withNativeFunction ("getUserPresetNames",
+            [] (const juce::Array<juce::var>& args,
+                juce::WebBrowserComponent::NativeFunctionCompletion completion)
+            {
+                juce::ignoreUnused (args);
+                juce::Array<juce::var> names;
+                for (auto& n : SynthlenKhmerProcessor::getUserPresetNames())
+                    names.add (n);
+                completion (juce::var (names));
+            })
+        // MIDI Learn: arm a parameter / clear a mapping / query mappings.
+        .withNativeFunction ("armMidiLearn",
+            [this] (const juce::Array<juce::var>& args,
+                    juce::WebBrowserComponent::NativeFunctionCompletion completion)
+            {
+                if (args.size() >= 1)
+                    processorRef.armMidiLearn (args[0].toString());
+                completion (juce::var());
+            })
+        .withNativeFunction ("clearMidiLearn",
+            [this] (const juce::Array<juce::var>& args,
+                    juce::WebBrowserComponent::NativeFunctionCompletion completion)
+            {
+                processorRef.clearMidiLearn (args.size() >= 1 ? args[0].toString() : juce::String());
+                completion (juce::var());
+            })
+        .withNativeFunction ("getMidiLearnMappings",
+            [this] (const juce::Array<juce::var>& args,
+                    juce::WebBrowserComponent::NativeFunctionCompletion completion)
+            {
+                juce::ignoreUnused (args);
+                completion (juce::var (processorRef.getMidiLearnMappings()));
+            })
         // Register all parameter relays.
         .withOptionsFrom (resonanceRelay)
         .withOptionsFrom (cutoffRelay)
@@ -158,6 +219,7 @@ juce::WebBrowserComponent::Options SynthlenKhmerEditor::makeOptions()
         .withOptionsFrom (vibDepthRelay)
         .withOptionsFrom (vibRateRelay)
         .withOptionsFrom (tuneRelay)
+        .withOptionsFrom (glideRelay)
         .withOptionsFrom (fxReverbRelay)
         .withOptionsFrom (fxDelayRelay)
         .withOptionsFrom (fxPitchRelay)
@@ -199,6 +261,7 @@ SynthlenKhmerEditor::SynthlenKhmerEditor (SynthlenKhmerProcessor& p)
     attachSlider ("vibDepth",     vibDepthRelay);
     attachSlider ("vibRate",      vibRateRelay);
     attachSlider ("tune",         tuneRelay);
+    attachSlider ("glide",        glideRelay);
 
     attachToggle ("fxReverb", fxReverbRelay);
     attachToggle ("fxDelay",  fxDelayRelay);

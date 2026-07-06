@@ -195,41 +195,51 @@ body.locked .slide-nav{cursor:pointer}
         <div class="tab-bar" style="display:flex;gap:4px;margin-bottom:10px">
           <div class="tab-btn active" data-tab="tabMain" onclick="switchTab(this)" style="flex:1;text-align:center;font-size:11px;font-weight:700;letter-spacing:2px;padding:7px 0;cursor:pointer;border-radius:5px;background:#d4b872;color:#1e2420">MAIN</div>
           <div class="tab-btn" data-tab="tabPerf" onclick="switchTab(this)" style="flex:1;text-align:center;font-size:11px;font-weight:700;letter-spacing:2px;padding:7px 0;cursor:pointer;border-radius:5px;background:rgba(255,255,255,.08);color:#8fa398">PERFORMANCE</div>
+          <div class="tab-btn" data-tab="tabAbout" onclick="switchTab(this)" style="flex:1;text-align:center;font-size:11px;font-weight:700;letter-spacing:2px;padding:7px 0;cursor:pointer;border-radius:5px;background:rgba(255,255,255,.08);color:#8fa398">ABOUT</div>
         </div>
+        <div class="tab-content" style="min-height:80px;position:relative">
         <div id="tabMain">
           <div class="fx-t">MULTI-EFFECT</div><div class="fx-btns"><div class="fx-btn" data-fx="fxReverb" onclick="toggleFx(this)">Reverb</div><div class="fx-btn" data-fx="fxDelay" onclick="toggleFx(this)">Delay</div><div class="fx-btn" data-fx="fxPitch" onclick="toggleFx(this)">Pitch</div></div>
         </div>
         <div id="tabPerf" style="display:none">
-          <div class="fx-t">ARTICULATION</div>
-          <div class="fx-btns" id="artBtns">
-            <div class="fx-btn" data-art="0">Long</div>
-            <div class="fx-btn" data-art="0.5">Short</div>
-            <div class="fx-btn" data-art="1">Auto</div>
+          <div class="fx-btns" id="artBtns" style="margin-bottom:4px">
+            <div class="fx-btn" data-art="0" style="font-size:9px;padding:4px 8px">Long</div>
+            <div class="fx-btn" data-art="0.5" style="font-size:9px;padding:4px 8px">Short</div>
+            <div class="fx-btn" data-art="1" style="font-size:9px;padding:4px 8px">Auto</div>
+            <div class="fx-btn" id="polyBtn" style="margin-left:6px;font-size:9px;padding:4px 8px">Poly</div>
+            <div class="fx-btn" id="rrBtn" style="font-size:9px;padding:4px 8px">RR</div>
           </div>
-          <div class="fx-btns" style="margin-top:8px">
-            <div class="fx-btn" id="polyBtn">Poly</div>
-            <div class="fx-btn" id="rrBtn">RR</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 10px">
+          <div class="perf-s" data-param="dynamics">
+            <div style="font-size:8px;letter-spacing:1px;color:#8fa398;margin-bottom:2px">DYNAMICS</div>
+            <div class="perf-track" style="height:6px;background:rgba(255,255,255,.12);border-radius:4px;cursor:pointer;position:relative"><div class="perf-fill" style="height:100%;width:80%;background:#d4b872;border-radius:4px"></div></div>
           </div>
-          <div style="margin-top:12px">
-            <div class="perf-s" data-param="dynamics">
-              <div style="font-size:10px;letter-spacing:1px;color:#8fa398;margin-bottom:3px">DYNAMICS</div>
-              <div class="perf-track" style="height:9px;background:rgba(255,255,255,.12);border-radius:5px;cursor:pointer;position:relative"><div class="perf-fill" style="height:100%;width:80%;background:#d4b872;border-radius:5px"></div></div>
-            </div>
-            <div class="perf-s" data-param="vibDepth" style="margin-top:8px">
-              <div style="font-size:10px;letter-spacing:1px;color:#8fa398;margin-bottom:3px">VIBRATO DEPTH</div>
-              <div class="perf-track" style="height:9px;background:rgba(255,255,255,.12);border-radius:5px;cursor:pointer;position:relative"><div class="perf-fill" style="height:100%;width:0%;background:#d4b872;border-radius:5px"></div></div>
-            </div>
-            <div class="perf-s" data-param="vibRate" style="margin-top:8px">
-              <div style="font-size:10px;letter-spacing:1px;color:#8fa398;margin-bottom:3px">VIBRATO SPEED</div>
-              <div class="perf-track" style="height:9px;background:rgba(255,255,255,.12);border-radius:5px;cursor:pointer;position:relative"><div class="perf-fill" style="height:100%;width:50%;background:#d4b872;border-radius:5px"></div></div>
-            </div>
-            <div class="perf-s" data-param="tune" style="margin-top:8px">
-              <div style="font-size:10px;letter-spacing:1px;color:#8fa398;margin-bottom:3px">MASTER TUNE (&plusmn;100 cents)</div>
-              <div class="perf-track" style="height:9px;background:rgba(255,255,255,.12);border-radius:5px;cursor:pointer;position:relative"><div class="perf-fill" style="height:100%;width:50%;background:#d4b872;border-radius:5px"></div></div>
-            </div>
+          <div class="perf-s" data-param="vibDepth">
+            <div style="font-size:8px;letter-spacing:1px;color:#8fa398;margin-bottom:2px">VIBRATO DEPTH</div>
+            <div class="perf-track" style="height:6px;background:rgba(255,255,255,.12);border-radius:4px;cursor:pointer;position:relative"><div class="perf-fill" style="height:100%;width:0%;background:#d4b872;border-radius:4px"></div></div>
+          </div>
+          <div class="perf-s" data-param="vibRate">
+            <div style="font-size:8px;letter-spacing:1px;color:#8fa398;margin-bottom:2px">VIBRATO SPEED</div>
+            <div class="perf-track" style="height:6px;background:rgba(255,255,255,.12);border-radius:4px;cursor:pointer;position:relative"><div class="perf-fill" style="height:100%;width:50%;background:#d4b872;border-radius:4px"></div></div>
+          </div>
+          <div class="perf-s" data-param="tune">
+            <div style="font-size:8px;letter-spacing:1px;color:#8fa398;margin-bottom:2px">MASTER TUNE (&plusmn;100c)</div>
+            <div class="perf-track" style="height:6px;background:rgba(255,255,255,.12);border-radius:4px;cursor:pointer;position:relative"><div class="perf-fill" style="height:100%;width:50%;background:#d4b872;border-radius:4px"></div></div>
+          </div>
+          <div class="perf-s" data-param="glide">
+            <div style="font-size:8px;letter-spacing:1px;color:#8fa398;margin-bottom:2px">GLIDE</div>
+            <div class="perf-track" style="height:6px;background:rgba(255,255,255,.12);border-radius:4px;cursor:pointer;position:relative"><div class="perf-fill" style="height:100%;width:0%;background:#d4b872;border-radius:4px"></div></div>
+          </div>
           </div>
         </div>
-          <div class="pt"><div class="pt-t">PRESET</div><div class="pt-l"></div></div>
+        <div id="tabAbout" style="display:none;text-align:center">
+          <div style="font-size:13px;font-weight:700;letter-spacing:2px;color:#d4b872;margin-bottom:4px">SYNTHLEN KHMER</div>
+          <div style="font-size:9px;letter-spacing:1px;color:#8fa398;margin-bottom:8px">TRADITIONAL INSTRUMENT PLUGIN</div>
+          <div style="font-size:10px;color:#e8ddc0;margin-bottom:3px">Created by <b style="color:#d4b872">CHHAY BORITH</b> (DJ Yahoo)</div>
+          <div style="font-size:9px;color:#8fa398">&#9742; +855 81 596 596 &nbsp;&bull;&nbsp; Telegram: 081 596 596</div>
+        </div>
+        </div>
+          <div class="pt"><div class="pt-t">PRESET <span id="userSaveBtn" style="float:right;font-size:9px;color:#d4b872;cursor:pointer;border:1px solid #d4b872;border-radius:4px;padding:1px 7px" title="Save current settings as user preset">+ SAVE</span></div><div class="pt-l"></div></div>
         </div>
     </div>
 
@@ -296,6 +306,22 @@ body.locked .slide-nav{cursor:pointer}
 const LOCKED = true;
 if(LOCKED)document.body.classList.add('locked');
 
+// Floating value readout shown while a knob / slider is dragged.
+const knobTip=document.createElement('div');
+knobTip.style.cssText='display:none;position:fixed;z-index:9998;background:#1e2420;border:1px solid #d4b872;color:#d4b872;font-size:11px;font-weight:700;letter-spacing:1px;padding:3px 9px;border-radius:5px;pointer-events:none;box-shadow:0 3px 10px rgba(0,0,0,.5)';
+document.body.appendChild(knobTip);
+function fmtVal(id,n){
+  if(id==='pitch')return((n-0.5)*24).toFixed(1)+' st';
+  if(id==='tune')return((n-0.5)*200).toFixed(0)+' c';
+  return Math.round(n*100)+'%';
+}
+function showTip(id,n,x,y){
+  knobTip.textContent=id.toUpperCase()+' '+fmtVal(id,n);
+  knobTip.style.display='block';
+  knobTip.style.left=(x+14)+'px';knobTip.style.top=(y-30)+'px';
+}
+function hideTip(){knobTip.style.display='none'}
+
 // Knobs (-135..135 deg maps to normalised 0..1)
 document.querySelectorAll('.knob').forEach(k=>{
   let a=-135;const i=k.querySelector('.knob-i');
@@ -305,10 +331,18 @@ document.querySelectorAll('.knob').forEach(k=>{
   draw();
   k.addEventListener('mousedown',e=>{
     let d=true,sy=e.clientY,sa=a;
+    showTip(k.dataset.param||'',(a+135)/270,e.clientX,e.clientY);
     const m=ev=>{if(!d)return;a=Math.min(135,Math.max(-135,sa+(sy-ev.clientY)*2));draw();
-      if(window.__onKnob&&k.dataset.param)window.__onKnob(k.dataset.param,(a+135)/270);};
-    const u=()=>{d=false;document.removeEventListener('mousemove',m);document.removeEventListener('mouseup',u)};
+      const n=(a+135)/270;
+      showTip(k.dataset.param||'',n,ev.clientX,ev.clientY);
+      if(window.__onKnob&&k.dataset.param)window.__onKnob(k.dataset.param,n);};
+    const u=()=>{d=false;hideTip();document.removeEventListener('mousemove',m);document.removeEventListener('mouseup',u)};
     document.addEventListener('mousemove',m);document.addEventListener('mouseup',u);
+  });
+  // Right-click a knob -> MIDI Learn menu.
+  k.addEventListener('contextmenu',e=>{
+    e.preventDefault();
+    if(window.__midiLearn&&k.dataset.param)window.__midiLearn(k.dataset.param,e.clientX,e.clientY);
   });
 })
 
@@ -589,6 +623,23 @@ document.getElementById('slideBox').addEventListener('drop',e=>{
 
 // ===== Multi-Effect buttons =====
 function toggleFx(btn){btn.classList.toggle('on');const on=btn.classList.contains('on');if(window.__onFx&&btn.dataset.fx)window.__onFx(btn.dataset.fx,on);}
+// Lock tab area height to the taller tab so switching never resizes the UI.
+function lockTabHeight(){
+  const tc=document.querySelector('.tab-content');
+  const m=document.getElementById('tabMain');
+  if(!tc||!m)return;
+  let h=m.offsetHeight;
+  ['tabPerf','tabAbout'].forEach(id=>{
+    const p=document.getElementById(id);if(!p)return;
+    const pd=p.style.display;
+    p.style.cssText+=';display:block;visibility:hidden;position:absolute;left:0;right:0';
+    h=Math.max(h,p.offsetHeight);
+    p.style.display=pd;p.style.visibility='';p.style.position='';p.style.left='';p.style.right='';
+  });
+  tc.style.height=h+'px';
+  tc.style.overflow='hidden';
+}
+window.addEventListener('load',()=>setTimeout(lockTabHeight,200));
 function switchTab(btn){
   document.querySelectorAll('.tab-btn').forEach(b=>{
     const active=b===btn;
@@ -756,15 +807,94 @@ if (window.__JUCE__) {
         const v = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
         st.setNormalisedValue(v);
         fill.style.width = (v * 100) + '%';
+        if (window.showTip) showTip(el.dataset.param, v, e.clientX, e.clientY);
       };
       track.addEventListener('mousedown', (e) => {
         setFromEvent(e);
         const move = (ev) => setFromEvent(ev);
-        const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
+        const up = () => { if (window.hideTip) hideTip(); window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
         window.addEventListener('mousemove', move);
         window.addEventListener('mouseup', up);
       });
     });
+
+    // --- MIDI Learn (right-click a knob) ---------------------------------
+    const armMidiLearnFn = Juce.getNativeFunction('armMidiLearn');
+    const clearMidiLearnFn = Juce.getNativeFunction('clearMidiLearn');
+    let learnMenu = null;
+    window.__midiLearn = (paramId, x, y) => {
+      if (learnMenu) learnMenu.remove();
+      learnMenu = document.createElement('div');
+      learnMenu.style.cssText = 'position:fixed;z-index:9999;background:#1e2420;border:1px solid #4a5c50;border-radius:6px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.6);font-size:11px;letter-spacing:1px';
+      learnMenu.style.left = x + 'px'; learnMenu.style.top = y + 'px';
+      const mk = (label, fn) => {
+        const it = document.createElement('div');
+        it.textContent = label;
+        it.style.cssText = 'padding:8px 16px;color:#e8ddc0;cursor:pointer';
+        it.onmouseenter = () => it.style.background = 'rgba(212,184,114,.15)';
+        it.onmouseleave = () => it.style.background = '';
+        it.onclick = () => { fn(); learnMenu.remove(); learnMenu = null; };
+        learnMenu.appendChild(it);
+      };
+      mk('MIDI LEARN: ' + paramId.toUpperCase(), () => armMidiLearnFn(paramId));
+      mk('CLEAR MAPPING', () => clearMidiLearnFn(paramId));
+      document.body.appendChild(learnMenu);
+      setTimeout(() => document.addEventListener('mousedown', function h(e){
+        if (learnMenu && !learnMenu.contains(e.target)) { learnMenu.remove(); learnMenu = null; }
+        document.removeEventListener('mousedown', h);
+      }), 0);
+    };
+
+    // --- User presets (SAVE button + list) --------------------------------
+    const saveUserPresetFn   = Juce.getNativeFunction('saveUserPreset');
+    const loadUserPresetFn   = Juce.getNativeFunction('loadUserPreset');
+    const deleteUserPresetFn = Juce.getNativeFunction('deleteUserPreset');
+    const getUserPresetsFn   = Juce.getNativeFunction('getUserPresetNames');
+    function refreshUserPresets() {
+      getUserPresetsFn().then((names) => {
+        const list = document.querySelector('.pt-l');
+        if (!list) return;
+        list.querySelectorAll('.pt-user').forEach(el => el.remove());
+        (names || []).forEach((n) => {
+          const d = document.createElement('div');
+          d.className = 'pt-a pt-user';
+          d.style.color = '#7fc98f';
+          d.textContent = '\u2605 ' + n;
+          d.onclick = () => loadUserPresetFn(n).then(() => {
+            const t = document.querySelector('.scr-t');
+            if (t) t.textContent = n;
+          });
+          d.oncontextmenu = (e) => {
+            e.preventDefault();
+            deleteUserPresetFn(n).then(refreshUserPresets);
+          };
+          list.appendChild(d);
+        });
+      });
+    }
+    const saveBtn = document.getElementById('userSaveBtn');
+    if (saveBtn) saveBtn.onclick = () => {
+      // Inline name box (window.prompt is unreliable in WebView2).
+      const box = document.createElement('div');
+      box.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(10,14,12,.85);display:flex;align-items:center;justify-content:center';
+      box.innerHTML = '<div style="background:#1e2420;border:1px solid #4a5c50;border-radius:10px;padding:22px 26px;text-align:center">'
+        + '<div style="font-size:12px;letter-spacing:2px;color:#d4b872;margin-bottom:10px">SAVE USER PRESET</div>'
+        + '<input id="upName" type="text" placeholder="Preset name" style="width:220px;font-size:13px;text-align:center;color:#e8ddc0;background:#141a16;border:1px solid #4a5c50;border-radius:6px;padding:9px;outline:none;margin-bottom:10px"><br>'
+        + '<button id="upOk" style="font-size:11px;font-weight:700;letter-spacing:1px;color:#1e2420;background:#d4b872;border:none;border-radius:5px;padding:8px 22px;cursor:pointer;margin-right:8px">SAVE</button>'
+        + '<button id="upNo" style="font-size:11px;letter-spacing:1px;color:#8fa398;background:rgba(255,255,255,.08);border:none;border-radius:5px;padding:8px 22px;cursor:pointer">CANCEL</button></div>';
+      document.body.appendChild(box);
+      const input = box.querySelector('#upName');
+      input.focus();
+      const close = () => box.remove();
+      box.querySelector('#upNo').onclick = close;
+      box.querySelector('#upOk').onclick = () => {
+        const n = input.value.trim();
+        if (!n) return;
+        saveUserPresetFn(n).then(() => { close(); refreshUserPresets(); });
+      };
+      input.onkeydown = (e) => { if (e.key === 'Enter') box.querySelector('#upOk').click(); if (e.key === 'Escape') close(); };
+    };
+    setTimeout(refreshUserPresets, 500);
 
     // --- Piano keys -> MIDI ---------------------------------------------
     const pianoNote = Juce.getNativeFunction('pianoNote');

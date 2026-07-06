@@ -30,6 +30,10 @@ struct SharedParams
     std::atomic<float>* rr           = nullptr;
     std::atomic<float>* poly         = nullptr;
     std::atomic<float>* tune         = nullptr; // 0.5 = A440, +/- 1 semitone
+    std::atomic<float>* glide        = nullptr; // 0 = off, 1 = 500 ms portamento
+
+    // Last played MIDI note (for legato glide). -1 = none yet.
+    mutable std::atomic<float> lastNote { -1.0f };
 
     static float get (std::atomic<float>* p, float fallback) { return p ? p->load() : fallback; }
 };
@@ -115,6 +119,24 @@ public:
 
         vibPhase = 0.0f;
 
+        // Legato glide (portamento): slide from the previous note's pitch.
+        glideOffsetSemis = 0.0f;
+        glideStep = 0.0f;
+        const float glideAmt = SharedParams::get (params ? params->glide : nullptr, 0.0f);
+        if (params != nullptr && glideAmt > 0.001f)
+        {
+            const float last = params->lastNote.load();
+            if (last >= 0.0f && (int) last != midiNoteNumber)
+            {
+                glideOffsetSemis = last - (float) midiNoteNumber;
+                const double glideSeconds = 0.02 + 0.48 * glideAmt; // 20..500 ms
+                const double sr = getSampleRate() > 0.0 ? getSampleRate() : 44100.0;
+                glideStep = (float) (glideOffsetSemis / (glideSeconds * sr));
+            }
+        }
+        if (params != nullptr)
+            params->lastNote.store ((float) midiNoteNumber);
+
         prepareFilterIfNeeded();
         filter.reset();
 
@@ -168,7 +190,7 @@ public:
         const float* inL = src.getReadPointer (0);
         const float* inR = srcChannels > 1 ? src.getReadPointer (1) : inL;
 
-        const double ratio = playbackRatio();
+        double ratio = playbackRatio();
         const int    outChannels = output.getNumChannels();
         const int    fadeSamples = juce::jmin (64, currentSound->length / 4);
         const double aaCoeff = (ratio > 1.0) ? (1.0 / ratio) : 1.0; // anti-alias when pitching up
@@ -233,6 +255,22 @@ public:
             if (outChannels > 1) output.addSample (1, startSample, r);
 
             ++startSample;
+            // Advance the glide towards the target pitch.
+            if (glideStep != 0.0f)
+            {
+                glideOffsetSemis -= glideStep;
+                if ((glideStep > 0.0f && glideOffsetSemis <= 0.0f)
+                    || (glideStep < 0.0f && glideOffsetSemis >= 0.0f))
+                {
+                    glideOffsetSemis = 0.0f;
+                    glideStep = 0.0f;
+                    ratio = playbackRatio();
+                }
+                else if ((numSamples & 31) == 0) // update pitch every 32 samples
+                {
+                    ratio = playbackRatio();
+                }
+            }
             if (vibSemis > 0.0001f)
             {
                 vibPhase += vibInc;
@@ -265,7 +303,7 @@ private:
         const double semis = (noteMidi - currentSound->rootNote)
                            + (pitchKnob - 0.5f) * 24.0
                            + (tuneKnob - 0.5f) * 2.0
-                           + pitchBendSemis + rrDetune;
+                           + pitchBendSemis + rrDetune + glideOffsetSemis;
         const double base  = std::pow (2.0, semis / 12.0);
         return base * (currentSound->sourceSampleRate / getSampleRate());
     }
@@ -334,6 +372,8 @@ private:
     float  vibPhase = 0.0f;        // vibrato LFO phase
     float  pitchBendSemis = 0.0f;  // MIDI pitch wheel (+/- 2 semitones)
     float  modWheel = 0.0f;        // MIDI CC1 -> extra vibrato
+    float  glideOffsetSemis = 0.0f; // legato glide: current offset from target
+    float  glideStep = 0.0f;        // per-sample glide decrement
 };
 
 //------------------------------------------------------------------------------

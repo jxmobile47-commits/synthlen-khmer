@@ -41,6 +41,7 @@ private:
     juce::WebSliderRelay vibDepthRelay     { "vibDepth" };
     juce::WebSliderRelay vibRateRelay      { "vibRate" };
     juce::WebSliderRelay tuneRelay         { "tune" };
+    juce::WebSliderRelay glideRelay        { "glide" };
 
     juce::WebToggleButtonRelay fxReverbRelay { "fxReverb" };
     juce::WebToggleButtonRelay fxDelayRelay  { "fxDelay" };
