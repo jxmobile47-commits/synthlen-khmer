@@ -105,11 +105,12 @@ if exist "%PAYLOAD%\Standalone\Synthlen Khmer.exe" (
 )
 
 echo.
-echo  [3/3] Installing sound banks...
+echo  [3/3] Installing sound banks (2.4 GB, please wait)...
 if exist "%PAYLOAD%\Standalone\SynthlenKhmer.banks" (
+    copy "%PAYLOAD%\Standalone\SynthlenKhmer.banks" "%APPDEST%\" /Y >nul
     if not exist "%BANKSDEST%" mkdir "%BANKSDEST%"
     copy "%PAYLOAD%\Standalone\SynthlenKhmer.banks" "%BANKSDEST%\" /Y >nul
-    echo  -^> Installed sound banks
+    echo  -^> Installed sound banks to app folder and Documents
 ) else (
     echo  -^> Sound banks not found, skipping
 )
