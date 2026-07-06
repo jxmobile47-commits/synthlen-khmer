@@ -93,11 +93,19 @@ jobs:
           New-Item -ItemType Directory -Force -Path $staging | Out-Null
           New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
-          # Copy VST3
+          # Copy VST3 (includes bank in Contents/Resources)
           $vst3 = Get-ChildItem "$buildOut\VST3" -Filter "*.vst3" -Recurse | Select-Object -First 1
           if ($vst3) {
             Copy-Item $vst3.FullName $staging -Recurse
-            Write-Host "VST3 copied"
+            Write-Host "VST3 copied (with bundled bank)"
+            # Verify bank is inside
+            $bankInVst3 = Join-Path $staging "Synthlen Khmer.vst3\Contents\Resources\SynthlenKhmer.banks"
+            if (Test-Path $bankInVst3) {
+              $sz = [math]::Round((Get-Item $bankInVst3).Length / 1MB, 1)
+              Write-Host "  Bank bundled: $sz MB"
+            } else {
+              Write-Host "  WARNING: Bank not found in VST3!"
+            }
           }
 
           # Copy Standalone
@@ -107,16 +115,8 @@ jobs:
             Write-Host "Standalone copied"
           }
 
-          # Split banks into parts < 2GB for GitHub Release assets
-          if (Test-Path "SynthlenKhmer.banks") {
-            $banksSize = (Get-Item "SynthlenKhmer.banks").Length
-            $partSize = [math]::Ceiling($banksSize / 2)
-            Write-Host "Splitting banks ($([math]::Round($banksSize/1MB,1)) MB) into 2 parts..."
-            7z a -v$partSize"b" "$outDir\SynthlenKhmer.banks.zip" "SynthlenKhmer.banks"
-            Write-Host "Bank parts created"
-          }
-
           # Create install batch script
+          # Bank is bundled inside VST3. Installer copies it to shared locations for Standalone.
           $lines = @(
             '@echo off',
             'echo ========================================',
@@ -126,46 +126,64 @@ jobs:
             'set VST3_DIR=%COMMONPROGRAMFILES%\VST3',
             'set APP_DIR=%PROGRAMFILES%\Synthlen Khmer',
             'set BANKS_DIR=%USERPROFILE%\Documents\Synthlen Khmer',
+            'set SHARED_DIR=%PROGRAMDATA%\Synthlen Khmer',
             '',
-            'echo Installing VST3...',
+            'echo Installing VST3 (includes sound bank)...',
             'if not exist "%VST3_DIR%" mkdir "%VST3_DIR%"',
-            'xcopy /E /I /Y "Synthlen Khmer.vst3" "%VST3_DIR%\Synthlen Khmer.vst3\" >nul 2>&1',
+            'xcopy /E /I /Y "Synthlen Khmer.vst3" "%VST3_DIR%\Synthlen Khmer.vst3" >nul 2>&1',
             '',
             'echo Installing Standalone...',
             'if not exist "%APP_DIR%" mkdir "%APP_DIR%"',
             'copy /Y "Synthlen Khmer.exe" "%APP_DIR%\" >nul 2>&1',
             '',
-            'echo Installing Sound Banks...',
-            'if not exist "%BANKS_DIR%" mkdir "%BANKS_DIR%"',
-            'if exist "SynthlenKhmer.banks.zip.001" (',
-            '  echo Recombining bank parts...',
-            '  copy /b "SynthlenKhmer.banks.zip.001"+"SynthlenKhmer.banks.zip.002" "SynthlenKhmer.banks.zip" >nul 2>&1',
-            '  powershell -Command "Expand-Archive -Path SynthlenKhmer.banks.zip -DestinationPath . -Force"',
+            'echo Copying sound banks from VST3 to shared locations...',
+            'set VST3BANK=%VST3_DIR%\Synthlen Khmer.vst3\Contents\Resources\SynthlenKhmer.banks',
+            'if exist "%VST3BANK%" (',
+            '  if not exist "%BANKS_DIR%" mkdir "%BANKS_DIR%"',
+            '  copy /Y "%VST3BANK%" "%BANKS_DIR%\" >nul 2>&1',
+            '  if not exist "%SHARED_DIR%" mkdir "%SHARED_DIR%"',
+            '  copy /Y "%VST3BANK%" "%SHARED_DIR%\" >nul 2>&1',
+            '  copy /Y "%VST3BANK%" "%APP_DIR%\" >nul 2>&1',
+            '  echo  -^> Banks copied to Documents, ProgramData, and app folder',
             ') else (',
-            '  copy /Y "SynthlenKhmer.banks" "%BANKS_DIR%\" >nul 2>&1',
+            '  echo  -^> WARNING: Bank not found in VST3',
             ')',
-            'copy /Y "SynthlenKhmer.banks" "%BANKS_DIR%\" >nul 2>&1',
             '',
             'echo Creating Shortcut...',
             'powershell -Command "$ws = New-Object -ComObject WScript.Shell; $sc = $ws.CreateShortcut([Environment]::GetFolderPath(''Desktop'') + ''\Synthlen Khmer.lnk''); $sc.TargetPath = ''%PROGRAMFILES%\Synthlen Khmer\Synthlen Khmer.exe''; $sc.Save()"',
             '',
             'echo.',
             'echo Installation complete!',
+            'echo VST3:       %VST3_DIR%\Synthlen Khmer.vst3',
+            'echo Standalone: %APP_DIR%\Synthlen Khmer.exe',
+            'echo Banks:      Bundled in VST3 + copied to shared locations',
             'pause'
           )
           $lines | Out-File "$staging\Install-SynthlenKhmer.bat" -Encoding ASCII
 
           # ZIP the staging directory using 7-Zip (handles >2GB)
+          Write-Host "Creating installer zip..."
           7z a -tzip "$outDir\SynthlenKhmer-Setup-$version.zip" "$staging\*"
 
-          Write-Host "Installer created:"
+          # Split zip into <2GB parts for GitHub Release
+          $zipSize = (Get-Item "$outDir\SynthlenKhmer-Setup-$version.zip").Length
+          Write-Host "Installer size: $([math]::Round($zipSize/1MB,1)) MB"
+          if ($zipSize -gt 1900000000) {
+            Write-Host "Splitting into <2GB parts..."
+            $partSize = "1900m"
+            7z a -v$partSize "$outDir\SynthlenKhmer-Setup-$version.zip" "$outDir\SynthlenKhmer-Setup-$version.zip"
+            Remove-Item "$outDir\SynthlenKhmer-Setup-$version.zip" -Force
+            Write-Host "Split into parts"
+          }
+
+          Write-Host "Installer output:"
           Get-ChildItem "$outDir" | ForEach-Object { Write-Host "  $($_.Name) - $([math]::Round($_.Length/1MB,1)) MB" }
 
       - name: Upload Windows Installer
         uses: actions/upload-artifact@v4
         with:
           name: SynthlenKhmer-Windows-Installer
-          path: vst/installer_output/*.zip
+          path: vst/installer_output/*
           if-no-files-found: warn
 
       - name: Auto-publish GitHub Release
@@ -174,19 +192,19 @@ jobs:
           tag_name: v1.0.0-windows
           name: Synthlen Khmer v1.0.0 - Windows
           body: |
-            ## Synthlen Khmer - Windows Installer
+            ## Synthlen Khmer - Windows Installer (bank bundled inside)
+
+            The sound bank is now bundled inside the VST3 plugin - install once, no separate bank download needed.
 
             ### Install
-            1. Download ALL 3 files from this release:
-               - `SynthlenKhmer-Setup-1.0.0.zip` (plugin installer)
-               - `SynthlenKhmer.banks.zip.001` (sound banks part 1)
-               - `SynthlenKhmer.banks.zip.002` (sound banks part 2)
-            2. Extract `SynthlenKhmer-Setup-1.0.0.zip` to a folder
-            3. Copy both bank parts into the SAME folder as `Install-SynthlenKhmer.bat`
-            4. Run `Install-SynthlenKhmer.bat` as Administrator
-            5. VST3 → `C:\Program Files\Common Files\VST3\`
-            6. Standalone → `C:\Program Files\Synthlen Khmer\`
-            7. Sound Banks → `Documents\Synthlen Khmer\` (auto-recombined from parts)
+            1. Download ALL `.zip` or `.zip.001`/`.zip.002` files from this release
+            2. If split parts: recombine with `copy /b SynthlenKhmer-Setup-1.0.0.zip.001+SynthlenKhmer-Setup-1.0.0.zip.002 SynthlenKhmer-Setup-1.0.0.zip`
+            3. Extract `SynthlenKhmer-Setup-1.0.0.zip` to a folder
+            4. Right-click `Install-SynthlenKhmer.bat` → Run as Administrator
+            5. Done! Bank is bundled in VST3 and copied to shared locations:
+               - VST3 → `C:\Program Files\Common Files\VST3\Synthlen Khmer.vst3`
+               - Standalone → `C:\Program Files\Synthlen Khmer\Synthlen Khmer.exe`
+               - Banks → `Documents\Synthlen Khmer\` + `C:\ProgramData\Synthlen Khmer\`
 
             ### Presets included
             - Russey Khyal
@@ -200,8 +218,6 @@ jobs:
             - x64 build
             - 16 AUX outputs + Main stereo
           files: |
-            vst/installer_output/*.zip
-            vst/installer_output/SynthlenKhmer.banks.zip.001
-            vst/installer_output/SynthlenKhmer.banks.zip.002
+            vst/installer_output/*
           prerelease: false
           fail_on_unmatched_files: false
