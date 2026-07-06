@@ -128,4 +128,26 @@ synthlen-khmer-vst/
 
 ---
 
+## Download / ទាញយកកម្មវិធី
+
+### Windows Installer (bundled with sound banks)
+- **Part 1:** https://drive.google.com/file/d/1RMRuVSP2O-r1K_RSvswuc2NTWGFrRTMZ/view?usp=sharing
+- **Part 2:** https://drive.google.com/file/d/1uQMq0ASgX0cKGcyaO1xNUhIvm0G0WP9F/view?usp=sharing
+
+**របៀប install:**
+1. Download Part 1 + Part 2
+2. បញ្ចូលគ្នា: `copy /b SynthlenKhmer-Setup-1.0.0.exe.part1 + SynthlenKhmer-Setup-1.0.0.exe.part2 SynthlenKhmer-Setup-1.0.0.exe`
+3. Double-click `SynthlenKhmer-Setup-1.0.0.exe` → install រួចរាល់
+4. Bank ភ្ជាប់ជាមួយកម្មវិធី — មិនត្រូវការ download ដាច់ដោយឡែយទេ
+
+### macOS Installer
+- **Download:** https://drive.google.com/file/d/129tOwhkne66gYk5QB8wWn4c4Xg39x_zA/view?usp=sharing
+
+**របៀប install:**
+1. Download `SynthlenKhmer-macOS-Installer.zip`
+2. Extract រួច double-click `.pkg` → install រួចរាល់
+3. Bank ភ្ជាប់ក្នុង `.app` ផ្ទាល់ — មិនត្រូវការ download ដាច់ដោយឡែយទេ
+
+---
+
 **Created:** June 15, 2026
