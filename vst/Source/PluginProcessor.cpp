@@ -253,11 +253,31 @@ namespace
 
     juce::File findPackFile()
     {
-        auto exeDir = juce::File::getSpecialLocation (juce::File::currentExecutableFile).getParentDirectory();
+        // The plugin binary itself (VST3 .dll / .so, or the standalone .exe).
+        auto binFile = juce::File::getSpecialLocation (juce::File::currentExecutableFile);
+        auto exeDir  = binFile.getParentDirectory();
+
         const juce::File candidates[] = {
+            // 1) Next to the binary (standalone .exe next to the bank)
             exeDir.getChildFile ("SynthlenKhmer.banks"),
             exeDir.getParentDirectory().getChildFile ("SynthlenKhmer.banks"),
+
+            // 2) Inside a VST3 bundle:  <name>.vst3/Contents/Resources/
+            //    Windows binary lives in Contents/x86_64-win/  -> ../Resources
+            //    macOS binary lives in  Contents/MacOS/         -> ../Resources
+            exeDir.getParentDirectory().getChildFile ("Resources").getChildFile ("SynthlenKhmer.banks"),
+            //    Extra level up in case of nested layout
+            exeDir.getParentDirectory().getParentDirectory().getChildFile ("Resources").getChildFile ("SynthlenKhmer.banks"),
+
+            // 3) Inside a macOS .app bundle: Contents/Resources/
+            exeDir.getSiblingFile ("Resources").getChildFile ("SynthlenKhmer.banks"),
+
+            // 4) Fallback: user Documents
             juce::File::getSpecialLocation (juce::File::userDocumentsDirectory)
+                .getChildFile ("Synthlen Khmer").getChildFile ("SynthlenKhmer.banks"),
+
+            // 5) Fallback: common app data / shared location
+            juce::File::getSpecialLocation (juce::File::commonApplicationDataDirectory)
                 .getChildFile ("Synthlen Khmer").getChildFile ("SynthlenKhmer.banks")
         };
         for (auto& f : candidates)

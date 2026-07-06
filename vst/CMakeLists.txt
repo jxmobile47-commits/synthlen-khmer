@@ -132,3 +132,37 @@ target_link_libraries(SynthlenKhmer PRIVATE
     juce::juce_recommended_lto_flags
     juce::juce_recommended_warning_flags
 )
+
+# ---------------------------------------------------------------------------
+# Bundle the encrypted sound-bank pack (SynthlenKhmer.banks) WITH the plugin.
+# After each build, copy the pack into:
+#   - the VST3 bundle:  <name>.vst3/Contents/Resources/SynthlenKhmer.banks
+#   - the Standalone dir next to the .exe / .app
+# so the bank always travels with the plugin (one install, no extra download).
+# ---------------------------------------------------------------------------
+set(BANK_PACK "${CMAKE_CURRENT_SOURCE_DIR}/SynthlenKhmer.banks")
+if(EXISTS "${BANK_PACK}")
+    message(STATUS "Found bank pack, will bundle with plugin: ${BANK_PACK}")
+
+    # --- VST3: copy into Contents/Resources of the built .vst3 bundle ---
+    if(TARGET SynthlenKhmer_VST3)
+        add_custom_command(TARGET SynthlenKhmer_VST3 POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory
+                "$<TARGET_FILE_DIR:SynthlenKhmer_VST3>/../Resources"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${BANK_PACK}"
+                "$<TARGET_FILE_DIR:SynthlenKhmer_VST3>/../Resources/SynthlenKhmer.banks"
+            COMMENT "Bundling SynthlenKhmer.banks into VST3 Resources")
+    endif()
+
+    # --- Standalone: copy next to the executable ---
+    if(TARGET SynthlenKhmer_Standalone)
+        add_custom_command(TARGET SynthlenKhmer_Standalone POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${BANK_PACK}"
+                "$<TARGET_FILE_DIR:SynthlenKhmer_Standalone>/SynthlenKhmer.banks"
+            COMMENT "Bundling SynthlenKhmer.banks next to Standalone app")
+    endif()
+else()
+    message(STATUS "No SynthlenKhmer.banks pack found - skipping bundle step")
+endif()
