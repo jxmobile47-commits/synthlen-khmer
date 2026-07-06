@@ -142,14 +142,15 @@ jobs:
           FINAL_PKG="$PKG_DIR/SynthlenKhmer-Setup-$VERSION.pkg"
           ls -lh "$FINAL_PKG"
 
-          # GitHub Release has a 2 GB per-file limit. The .pkg now includes the
-          # bank inside both bundles (~5 GB), so split it into <2GB parts for
-          # release upload. Users recombine into the .pkg, then double-click.
+          # GitHub Release has a 2 GB per-file limit. The .pkg includes the
+          # bank inside (~2.5 GB), so split it into <2GB parts for release upload.
           PKG_SIZE=$(stat -f%z "$FINAL_PKG" 2>/dev/null || stat -c%s "$FINAL_PKG")
           echo "Final PKG size: $((PKG_SIZE / 1048576)) MB"
           if [ "$PKG_SIZE" -gt 1900000000 ]; then
             echo "PKG exceeds 1.9 GB - splitting into parts for GitHub Release..."
             split -b 1900m "$FINAL_PKG" "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.pkg.part"
+            # Remove the full pkg so it doesn't get uploaded to GitHub
+            rm -f "$FINAL_PKG"
             ls -lh "$PKG_DIR"/SynthlenKhmer-Setup-$VERSION.pkg.part*
           else
             echo "PKG under limit - no split needed."
