@@ -155,13 +155,25 @@ if(EXISTS "${BANK_PACK}")
             COMMENT "Bundling SynthlenKhmer.banks into VST3 Resources")
     endif()
 
-    # --- Standalone: copy next to the executable ---
+    # --- Standalone: copy next to the executable (Windows) or Resources (macOS) ---
     if(TARGET SynthlenKhmer_Standalone)
-        add_custom_command(TARGET SynthlenKhmer_Standalone POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${BANK_PACK}"
-                "$<TARGET_FILE_DIR:SynthlenKhmer_Standalone>/SynthlenKhmer.banks"
-            COMMENT "Bundling SynthlenKhmer.banks next to Standalone app")
+        if(APPLE)
+            # macOS: put in Contents/Resources to avoid codesign issues
+            add_custom_command(TARGET SynthlenKhmer_Standalone POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E make_directory
+                    "$<TARGET_FILE_DIR:SynthlenKhmer_Standalone>/../Resources"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${BANK_PACK}"
+                    "$<TARGET_FILE_DIR:SynthlenKhmer_Standalone>/../Resources/SynthlenKhmer.banks"
+                COMMENT "Bundling SynthlenKhmer.banks into Standalone Resources")
+        else()
+            # Windows: put next to .exe
+            add_custom_command(TARGET SynthlenKhmer_Standalone POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${BANK_PACK}"
+                    "$<TARGET_FILE_DIR:SynthlenKhmer_Standalone>/SynthlenKhmer.banks"
+                COMMENT "Bundling SynthlenKhmer.banks next to Standalone app")
+        endif()
     endif()
 else()
     message(STATUS "No SynthlenKhmer.banks pack found - skipping bundle step")

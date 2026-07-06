@@ -61,12 +61,12 @@ jobs:
       - name: Configure CMake
         shell: bash
         working-directory: vst
-        run: cmake -B build -G "Xcode" -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+        run: cmake -B build -G "Xcode" -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO
 
       - name: Build
         shell: bash
         working-directory: vst
-        run: cmake --build build --config Release --parallel 4 2>&1 || cmake --build build --config Release CODE_SIGNING_ALLOWED=NO 2>&1
+        run: cmake --build build --config Release --parallel 4 -- CODE_SIGNING_ALLOWED=NO 2>&1
 
       - name: List build artifacts
         shell: bash
