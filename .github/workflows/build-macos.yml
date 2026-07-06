@@ -159,7 +159,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: SynthlenKhmer-macOS-Installer
-          path: vst/installer_output/SynthlenKhmer-Setup-*.pkg
+          path: vst/installer_output/SynthlenKhmer-Setup-*.pkg*
           if-no-files-found: warn
 
       - name: Upload VST3
@@ -184,19 +184,19 @@ jobs:
           body: |
             ## Synthlen Khmer - macOS Installer (bank bundled inside)
 
-            The sound bank is now **bundled inside the plugin** - install once,
-            no separate bank download or manual placement needed.
+            The sound bank is now bundled inside the VST3 plugin - install once, no separate bank download needed.
 
             ### Install
-            1. Download ALL `.pkg.part*` files from this release
+            1. Download BOTH `.pkg.part*` files from this release
             2. Recombine them in Terminal:
                ```bash
                cat SynthlenKhmer-Setup-1.0.0.pkg.part* > SynthlenKhmer-Setup-1.0.0.pkg
                ```
             3. Double-click `SynthlenKhmer-Setup-1.0.0.pkg` to install
-            4. Done! Bank travels with the plugin:
+            4. Done! Bank is bundled in VST3 and copied to shared location:
                - VST3 → `/Library/Audio/Plug-Ins/VST3/Synthlen Khmer.vst3`
                - Standalone → `/Applications/Synthlen Khmer.app`
+               - Banks → `/Library/Application Support/Synthlen Khmer/`
 
             ### Presets included
             - Russey Khyal
@@ -210,6 +210,6 @@ jobs:
             - Universal Binary (Apple Silicon + Intel)
             - 16 AUX outputs + Main stereo
           files: |
-            vst/installer_output/SynthlenKhmer-Setup-*.pkg.part*
+            vst/installer_output/SynthlenKhmer-Setup-*.pkg*
           prerelease: false
           fail_on_unmatched_files: false

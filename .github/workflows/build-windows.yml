@@ -149,23 +149,24 @@ jobs:
           )
           $lines | Out-File "$staging\Install-SynthlenKhmer.bat" -Encoding ASCII
 
-          # ZIP the staging directory using 7-Zip (handles >2GB)
-          Write-Host "Creating installer zip..."
-          7z a -tzip "$outDir\SynthlenKhmer-Setup-$version.zip" "$staging\*"
+          # Create installer using 7z with max compression (LZMA2)
+          Write-Host "Creating installer 7z with max compression..."
+          7z a -t7z -mx=9 -mfb=273 "$outDir\SynthlenKhmer-Setup-$version.7z" "$staging\*"
 
-          # Split zip into <2GB parts for GitHub Release
-          $zipSize = (Get-Item "$outDir\SynthlenKhmer-Setup-$version.zip").Length
-          Write-Host "Installer size: $([math]::Round($zipSize/1MB,1)) MB"
-          if ($zipSize -gt 1900000000) {
-            Write-Host "Splitting into <2GB parts..."
-            7z a -v1900m "$outDir\SynthlenKhmer-Setup-$version.split.zip" "$outDir\SynthlenKhmer-Setup-$version.zip"
-            Remove-Item "$outDir\SynthlenKhmer-Setup-$version.zip" -Force
-            # Rename parts to .zip.001, .zip.002 etc
-            Get-ChildItem "$outDir\SynthlenKhmer-Setup-$version.split.zip.*" | ForEach-Object {
-              $newName = $_.Name -replace '\.split\.zip\.(\d+)', '.zip.$1'
+          # Check if under 2GB for GitHub Release
+          $installerSize = (Get-Item "$outDir\SynthlenKhmer-Setup-$version.7z").Length
+          Write-Host "Installer size: $([math]::Round($installerSize/1MB,1)) MB"
+          if ($installerSize -gt 1900000000) {
+            Write-Host "Still over 2GB - splitting into parts..."
+            7z a -v1900m "$outDir\SynthlenKhmer-Setup-$version.split.7z" "$outDir\SynthlenKhmer-Setup-$version.7z"
+            Remove-Item "$outDir\SynthlenKhmer-Setup-$version.7z" -Force
+            Get-ChildItem "$outDir\SynthlenKhmer-Setup-$version.split.7z.*" | ForEach-Object {
+              $newName = $_.Name -replace '\.split\.7z\.(\d+)', '.7z.$1'
               Rename-Item $_.FullName $newName
             }
             Write-Host "Split into parts"
+          } else {
+            Write-Host "Under 2GB - single file OK!"
           }
 
           Write-Host "Installer output:"
@@ -189,9 +190,9 @@ jobs:
             The sound bank is now bundled inside the VST3 plugin - install once, no separate bank download needed.
 
             ### Install
-            1. Download ALL `.zip` or `.zip.001`/`.zip.002` files from this release
-            2. If split parts: recombine with `copy /b SynthlenKhmer-Setup-1.0.0.zip.001+SynthlenKhmer-Setup-1.0.0.zip.002 SynthlenKhmer-Setup-1.0.0.zip`
-            3. Extract `SynthlenKhmer-Setup-1.0.0.zip` to a folder
+            1. Download the `.7z` file (or `.7z.001` + `.7z.002` if split)
+            2. If split: recombine with `copy /b SynthlenKhmer-Setup-1.0.0.7z.001+SynthlenKhmer-Setup-1.0.0.7z.002 SynthlenKhmer-Setup-1.0.0.7z`
+            3. Extract `SynthlenKhmer-Setup-1.0.0.7z` with 7-Zip to a folder
             4. Right-click `Install-SynthlenKhmer.bat` → Run as Administrator
             5. Done! Bank is bundled in VST3 and copied to shared locations:
                - VST3 → `C:\Program Files\Common Files\VST3\Synthlen Khmer.vst3`
