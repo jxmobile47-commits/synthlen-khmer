@@ -108,29 +108,20 @@ jobs:
             echo "WARNING: Standalone not found"
           fi
 
-          # Do NOT bundle banks into .pkg (>2GB GitHub limit) - split and upload separately
-          if [ -f "SynthlenKhmer.banks" ]; then
-            BANKS_SIZE=$(stat -f%z SynthlenKhmer.banks 2>/dev/null || stat -c%s SynthlenKhmer.banks)
-            PART_SIZE=$((BANKS_SIZE / 2 + 1))
-            echo "Splitting banks ($((BANKS_SIZE / 1048576)) MB) into 2 parts..."
-            split -b $PART_SIZE SynthlenKhmer.banks installer_output/SynthlenKhmer.banks.part
-            echo "Bank parts created"
-            ls -lh installer_output/SynthlenKhmer.banks.part*
-          fi
+          # The bank is now bundled INSIDE the .app and .vst3 by the CMake
+          # post-build step (Contents/Resources/SynthlenKhmer.banks), so the
+          # plugin travels with the bank. No manual placement needed.
+          echo "Verifying bank is bundled inside plugin bundles..."
+          ls -lh "$PKG_DIR/root/Applications/Synthlen Khmer.app/Contents/Resources/SynthlenKhmer.banks" 2>/dev/null \
+            && echo "OK: bank bundled in Standalone .app" || echo "WARN: bank not found in .app"
+          ls -lh "$PKG_DIR/root/Library/Audio/Plug-Ins/VST3/Synthlen Khmer.vst3/Contents/Resources/SynthlenKhmer.banks" 2>/dev/null \
+            && echo "OK: bank bundled in VST3" || echo "WARN: bank not found in VST3"
 
-          # Postinstall script (no banks in pkg - user places manually)
+          # Postinstall: bank already bundled inside plugins, nothing to place.
           cat > "$PKG_DIR/scripts/postinstall" << 'SCRIPT'
           #!/bin/bash
-          # Create banks directory for user to place SynthlenKhmer.banks
-          for USER_HOME in /Users/*; do
-            USER_NAME=$(basename "$USER_HOME")
-            if [ "$USER_NAME" = "Shared" ] || [ "$USER_NAME" = "." ] || [ "$USER_NAME" = ".." ]; then
-              continue
-            fi
-            DEST="$USER_HOME/Documents/Synthlen Khmer"
-            mkdir -p "$DEST"
-            chown -R "$USER_NAME:staff" "$DEST" 2>/dev/null || true
-          done
+          # Bank is bundled inside the plugin bundles - no manual steps needed.
+          exit 0
           SCRIPT
           chmod +x "$PKG_DIR/scripts/postinstall"
 
@@ -147,10 +138,22 @@ jobs:
             --package "$PKG_DIR/SynthlenKhmer.pkg" \
             "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.pkg"
 
-          echo "=== Installer created ==="
-          ls -lh "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.pkg"
-          echo "Banks file size:"
-          ls -lh SynthlenKhmer.banks 2>/dev/null || echo "No banks file"
+          echo "=== Installer created (bank bundled inside) ==="
+          FINAL_PKG="$PKG_DIR/SynthlenKhmer-Setup-$VERSION.pkg"
+          ls -lh "$FINAL_PKG"
+
+          # GitHub Release has a 2 GB per-file limit. The .pkg now includes the
+          # bank inside both bundles (~5 GB), so split it into <2GB parts for
+          # release upload. Users recombine into the .pkg, then double-click.
+          PKG_SIZE=$(stat -f%z "$FINAL_PKG" 2>/dev/null || stat -c%s "$FINAL_PKG")
+          echo "Final PKG size: $((PKG_SIZE / 1048576)) MB"
+          if [ "$PKG_SIZE" -gt 1900000000 ]; then
+            echo "PKG exceeds 1.9 GB - splitting into parts for GitHub Release..."
+            split -b 1900m "$FINAL_PKG" "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.pkg.part"
+            ls -lh "$PKG_DIR"/SynthlenKhmer-Setup-$VERSION.pkg.part*
+          else
+            echo "PKG under limit - no split needed."
+          fi
 
       - name: Upload macOS Installer
         uses: actions/upload-artifact@v4
@@ -179,21 +182,21 @@ jobs:
           tag_name: v1.0.0-macos
           name: Synthlen Khmer v1.0.0 - macOS
           body: |
-            ## Synthlen Khmer - macOS Installer
+            ## Synthlen Khmer - macOS Installer (bank bundled inside)
+
+            The sound bank is now **bundled inside the plugin** - install once,
+            no separate bank download or manual placement needed.
 
             ### Install
-            1. Download ALL 3 files from this release:
-               - `SynthlenKhmer-Setup-1.0.0.pkg` (plugin installer)
-               - `SynthlenKhmer.banks.partaa` (sound banks part 1)
-               - `SynthlenKhmer.banks.partab` (sound banks part 2)
-            2. Double-click `SynthlenKhmer-Setup-1.0.0.pkg` to install plugin
-            3. Recombine bank parts in Terminal:
+            1. Download ALL `.pkg.part*` files from this release
+            2. Recombine them in Terminal:
                ```bash
-               cat SynthlenKhmer.banks.partaa SynthlenKhmer.banks.partab > SynthlenKhmer.banks
+               cat SynthlenKhmer-Setup-1.0.0.pkg.part* > SynthlenKhmer-Setup-1.0.0.pkg
                ```
-            4. Place at: `~/Documents/Synthlen Khmer/SynthlenKhmer.banks`
-            5. VST3 → `/Library/Audio/Plug-Ins/VST3/`
-            6. Standalone → `/Applications/`
+            3. Double-click `SynthlenKhmer-Setup-1.0.0.pkg` to install
+            4. Done! Bank travels with the plugin:
+               - VST3 → `/Library/Audio/Plug-Ins/VST3/Synthlen Khmer.vst3`
+               - Standalone → `/Applications/Synthlen Khmer.app`
 
             ### Presets included
             - Russey Khyal
@@ -207,8 +210,6 @@ jobs:
             - Universal Binary (Apple Silicon + Intel)
             - 16 AUX outputs + Main stereo
           files: |
-            vst/installer_output/SynthlenKhmer-Setup-*.pkg
-            vst/installer_output/SynthlenKhmer.banks.partaa
-            vst/installer_output/SynthlenKhmer.banks.partab
+            vst/installer_output/SynthlenKhmer-Setup-*.pkg.part*
           prerelease: false
           fail_on_unmatched_files: false
