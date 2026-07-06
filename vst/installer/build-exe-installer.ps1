@@ -110,7 +110,10 @@ if exist "%PAYLOAD%\Standalone\SynthlenKhmer.banks" (
     copy "%PAYLOAD%\Standalone\SynthlenKhmer.banks" "%APPDEST%\" /Y >nul
     if not exist "%BANKSDEST%" mkdir "%BANKSDEST%"
     copy "%PAYLOAD%\Standalone\SynthlenKhmer.banks" "%BANKSDEST%\" /Y >nul
-    echo  -^> Installed sound banks to app folder and Documents
+    set "SHAREDDIR=%ProgramData%\Synthlen Khmer"
+    if not exist "%SHAREDDIR%" mkdir "%SHAREDDIR%"
+    copy "%PAYLOAD%\Standalone\SynthlenKhmer.banks" "%SHAREDDIR%\" /Y >nul
+    echo  -^> Installed sound banks to app folder, Documents, and ProgramData
 ) else (
     echo  -^> Sound banks not found, skipping
 )

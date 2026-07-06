@@ -108,19 +108,24 @@ jobs:
             echo "WARNING: Standalone not found"
           fi
 
-          # The bank is now bundled INSIDE the .app and .vst3 by the CMake
-          # post-build step (Contents/Resources/SynthlenKhmer.banks), so the
-          # plugin travels with the bank. No manual placement needed.
-          echo "Verifying bank is bundled inside plugin bundles..."
+          # Bank is bundled ONLY inside the Standalone .app (not VST3) to keep
+          # installer size ~2.5 GB instead of ~5 GB. The postinstall script
+          # copies it to /Library/Application Support/ for VST3 to find.
+          echo "Verifying bank is bundled inside Standalone .app..."
           ls -lh "$PKG_DIR/root/Applications/Synthlen Khmer.app/Contents/Resources/SynthlenKhmer.banks" 2>/dev/null \
             && echo "OK: bank bundled in Standalone .app" || echo "WARN: bank not found in .app"
-          ls -lh "$PKG_DIR/root/Library/Audio/Plug-Ins/VST3/Synthlen Khmer.vst3/Contents/Resources/SynthlenKhmer.banks" 2>/dev/null \
-            && echo "OK: bank bundled in VST3" || echo "WARN: bank not found in VST3"
 
-          # Postinstall: bank already bundled inside plugins, nothing to place.
+          # Postinstall: copy bank from .app to shared location so VST3 can find it.
           cat > "$PKG_DIR/scripts/postinstall" << 'SCRIPT'
           #!/bin/bash
-          # Bank is bundled inside the plugin bundles - no manual steps needed.
+          # Bank is bundled inside Standalone .app. Copy to shared location for VST3.
+          SHARED_DIR="/Library/Application Support/Synthlen Khmer"
+          mkdir -p "$SHARED_DIR"
+          APP_BANK="/Applications/Synthlen Khmer.app/Contents/Resources/SynthlenKhmer.banks"
+          if [ -f "$APP_BANK" ]; then
+            cp "$APP_BANK" "$SHARED_DIR/SynthlenKhmer.banks"
+            echo "Copied bank to $SHARED_DIR"
+          fi
           exit 0
           SCRIPT
           chmod +x "$PKG_DIR/scripts/postinstall"
