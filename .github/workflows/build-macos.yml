@@ -142,30 +142,57 @@ jobs:
           FINAL_PKG="$PKG_DIR/SynthlenKhmer-Setup-$VERSION.pkg"
           ls -lh "$FINAL_PKG"
 
-          # GitHub Release has a 2 GB per-file limit.
-          # Try compressing the .pkg with 7z (LZMA2 max) to get under 2GB.
-          # If still over, split into parts.
-          PKG_SIZE=$(stat -f%z "$FINAL_PKG" 2>/dev/null || stat -c%s "$FINAL_PKG")
-          echo "Final PKG size: $((PKG_SIZE / 1048576)) MB"
-
-          if [ "$PKG_SIZE" -gt 1900000000 ]; then
-            echo "PKG over 1.9 GB - compressing with 7z (max)..."
-            7z a -t7z -mx=9 -mfb=273 "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.7z" "$FINAL_PKG"
-            rm -f "$FINAL_PKG"
-            SEVENZ_SIZE=$(stat -f%z "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.7z" 2>/dev/null || stat -c%s "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.7z")
-            echo "7z compressed size: $((SEVENZ_SIZE / 1048576)) MB"
-
-            if [ "$SEVENZ_SIZE" -gt 1900000000 ]; then
-              echo "Still over 1.9 GB - splitting 7z into parts..."
-              split -b 1900m "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.7z" "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.7z.part"
-              rm -f "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.7z"
-              ls -lh "$PKG_DIR"/SynthlenKhmer-Setup-$VERSION.7z.part*
-            else
-              echo "7z under 2 GB - single file!"
-              ls -lh "$PKG_DIR"/SynthlenKhmer-Setup-$VERSION.7z
-            fi
+          # GitHub Release + LFS have 2 GB per-file limit.
+          # Compress the staging directory directly with 7z (better than compressing .pkg
+          # which already has internal gzip compression).
+          # Include an install.sh script so user can install without .pkg.
+          
+          # Create install script
+          cat > "$PKG_DIR/root/install.sh" << 'INSTALLSH'
+          #!/bin/bash
+          # Synthlen Khmer macOS installer (from 7z archive)
+          echo "Installing Synthlen Khmer..."
+          
+          VST3_DEST="/Library/Audio/Plug-Ins/VST3"
+          APP_DEST="/Applications"
+          SHARED_DIR="/Library/Application Support/Synthlen Khmer"
+          
+          # Install VST3 (includes bank in Contents/Resources)
+          mkdir -p "$VST3_DEST"
+          cp -R "Synthlen Khmer.vst3" "$VST3_DEST/" 2>/dev/null
+          echo "  VST3 -> $VST3_DEST/Synthlen Khmer.vst3"
+          
+          # Install Standalone
+          cp -R "Synthlen Khmer.app" "$APP_DEST/" 2>/dev/null
+          echo "  Standalone -> $APP_DEST/Synthlen Khmer.app"
+          
+          # Copy bank from VST3 to shared location for Standalone
+          mkdir -p "$SHARED_DIR"
+          VST3_BANK="$VST3_DEST/Synthlen Khmer.vst3/Contents/Resources/SynthlenKhmer.banks"
+          if [ -f "$VST3_BANK" ]; then
+            cp "$VST3_BANK" "$SHARED_DIR/SynthlenKhmer.banks"
+            echo "  Banks -> $SHARED_DIR/SynthlenKhmer.banks"
+          fi
+          
+          echo "Done!"
+          INSTALLSH
+          chmod +x "$PKG_DIR/root/install.sh"
+          
+          # Compress staging directory with 7z max
+          echo "Compressing with 7z (LZMA2 max)..."
+          7z a -t7z -mx=9 -mfb=273 "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.7z" "$PKG_DIR/root/*"
+          
+          SEVENZ_SIZE=$(stat -f%z "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.7z" 2>/dev/null || stat -c%s "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.7z")
+          echo "7z compressed size: $((SEVENZ_SIZE / 1048576)) MB"
+          
+          if [ "$SEVENZ_SIZE" -gt 1900000000 ]; then
+            echo "Still over 1.9 GB - splitting into parts..."
+            split -b 1900m "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.7z" "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.7z.part"
+            rm -f "$PKG_DIR/SynthlenKhmer-Setup-$VERSION.7z"
+            ls -lh "$PKG_DIR"/SynthlenKhmer-Setup-$VERSION.7z.part*
           else
-            echo "PKG under limit - no compression needed."
+            echo "Under 2 GB - single file!"
+            ls -lh "$PKG_DIR"/SynthlenKhmer-Setup-$VERSION.7z
           fi
 
       - name: Upload macOS Installer
@@ -203,10 +230,10 @@ jobs:
 
             ### Install (single .7z file)
             1. Download `SynthlenKhmer-Setup-1.0.0.7z`
-            2. Extract with 7z: `7z x SynthlenKhmer-Setup-1.0.0.7z`
-               (Install p7zip first: `brew install p7zip`)
-            3. Double-click `SynthlenKhmer-Setup-1.0.0.pkg` to install
-            4. Done! Bank is bundled in VST3 and copied to shared location:
+            2. Install p7zip: `brew install p7zip`
+            3. Extract: `7z x SynthlenKhmer-Setup-1.0.0.7z`
+            4. Run installer: `sudo ./install.sh`
+            5. Done! Bank is bundled in VST3 and copied to shared location:
                - VST3 → `/Library/Audio/Plug-Ins/VST3/Synthlen Khmer.vst3`
                - Standalone → `/Applications/Synthlen Khmer.app`
                - Banks → `/Library/Application Support/Synthlen Khmer/`
@@ -214,8 +241,9 @@ jobs:
             ### Install (if split .7z.part* files)
             1. Download ALL `.7z.part*` files
             2. Recombine: `cat SynthlenKhmer-Setup-1.0.0.7z.part* > SynthlenKhmer-Setup-1.0.0.7z`
-            3. Extract: `7z x SynthlenKhmer-Setup-1.0.0.7z` (install p7zip: `brew install p7zip`)
-            4. Double-click `SynthlenKhmer-Setup-1.0.0.pkg` to install
+            3. Install p7zip: `brew install p7zip`
+            4. Extract: `7z x SynthlenKhmer-Setup-1.0.0.7z`
+            5. Run installer: `sudo ./install.sh`
 
             ### Presets included
             - Russey Khyal
@@ -229,7 +257,6 @@ jobs:
             - Universal Binary (Apple Silicon + Intel)
             - 16 AUX outputs + Main stereo
           files: |
-            vst/installer_output/SynthlenKhmer-Setup-*.pkg
             vst/installer_output/SynthlenKhmer-Setup-*.7z
             vst/installer_output/SynthlenKhmer-Setup-*.7z.part*
           prerelease: false
