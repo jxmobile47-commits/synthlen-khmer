@@ -64,35 +64,31 @@ mkdir -p "$VST3_DEST"
 cp -R "$VST3_SOURCE" "$VST3_DEST/"
 echo "  -> OK"
 
-# ---- Component 2: Standalone app + bank ----
-echo "[2/3] Staging Standalone app + bank pack..."
+# ---- Component 2: Standalone app (no bank - finds it via shared location) ----
+echo "[2/3] Staging Standalone app..."
 APP_DEST="$STAGING_DIR/app"
 mkdir -p "$APP_DEST"
 cp -R "$STANDALONE_SOURCE" "$APP_DEST/"
+echo "  -> OK (no bank - will find from shared location)"
 
-# Copy SynthlenKhmer.banks into the .app bundle (next to executable)
-APP_CONTENTS="$APP_DEST/Synthlen Khmer.app/Contents"
-# Place bank in Contents/Resources/ and also next to MacOS/ for fallback
-cp "$BANKS_PACK" "$APP_CONTENTS/Resources/"
-# Also place in the same dir as the executable for findPackFile() to find it
-cp "$BANKS_PACK" "$APP_CONTENTS/MacOS/"
-
-BANKS_SIZE_COPIED=$(du -h "$APP_CONTENTS/Resources/SynthlenKhmer.banks" | cut -f1)
-echo "  -> OK (bank: $BANKS_SIZE_COPIED)"
-
-# ---- Component 3: Bank pack to Documents (fallback) ----
-echo "[3/3] Staging bank pack for Documents..."
-DOCS_DEST="$STAGING_DIR/docs"
-mkdir -p "$DOCS_DEST/Synthlen Khmer"
-cp "$BANKS_PACK" "$DOCS_DEST/Synthlen Khmer/"
-echo "  -> OK"
+# ---- Verify bank is in VST3 ----
+echo "[3/3] Verifying bank in VST3 bundle..."
+VST3_BANK="$VST3_DEST/Synthlen Khmer.vst3/Contents/Resources/SynthlenKhmer.banks"
+if [ -f "$VST3_BANK" ]; then
+    BANKS_SIZE=$(du -h "$VST3_BANK" | cut -f1)
+    echo "  -> OK (bank: $BANKS_SIZE)"
+else
+    echo "  -> WARNING: Bank not in VST3! Copying manually..."
+    mkdir -p "$(dirname "$VST3_BANK")"
+    cp "$BANKS_PACK" "$VST3_BANK"
+fi
 
 echo ""
 echo "Building component packages..."
 
 mkdir -p "$OUTPUT_DIR"
 
-# Build VST3 component package
+# Build VST3 component package (includes bank in Contents/Resources)
 # VST3 installs to /Library/Audio/Plug-Ins/VST3/
 pkgbuild \
     --root "$STAGING_DIR/vst3" \
@@ -101,23 +97,15 @@ pkgbuild \
     --install-location "/Library/Audio/Plug-Ins/VST3" \
     "$OUTPUT_DIR/component-vst3.pkg"
 
-# Build Standalone app component package
+# Build Standalone app component package (no bank - finds via shared location)
 # App installs to /Applications/
 pkgbuild \
     --root "$STAGING_DIR/app" \
     --identifier "com.synthlenkhmer.app" \
     --version "$VERSION" \
     --install-location "/Applications" \
+    --scripts "$SCRIPT_DIR/scripts" \
     "$OUTPUT_DIR/component-app.pkg"
-
-# Build Documents bank pack component package
-# Bank installs to ~/Documents/Synthlen Khmer/
-pkgbuild \
-    --root "$STAGING_DIR/docs" \
-    --identifier "com.synthlenkhmer.banks" \
-    --version "$VERSION" \
-    --install-location "$HOME/Documents" \
-    "$OUTPUTDIR/component-banks.pkg"
 
 echo ""
 echo "Building final distribution .pkg..."
@@ -135,26 +123,20 @@ cat > "$DIST_XML" << EOF
     <conclusion file="conclusion.txt"/>
 
     <choices-outline>
-        <line choice="choice_app"/>
         <line choice="choice_vst3"/>
-        <line choice="choice_banks"/>
+        <line choice="choice_app"/>
     </choices-outline>
 
-    <choice id="choice_app" title="Standalone Application" description="Synthlen Khmer standalone app with built-in sound banks">
-        <pkg-ref id="com.synthlenkhmer.app"/>
-    </choice>
-
-    <choice id="choice_vst3" title="VST3 Plugin" description="VST3 plugin for use in DAWs (Ableton, Logic, etc.)">
+    <choice id="choice_vst3" title="VST3 Plugin (includes sound bank)" description="VST3 plugin with bundled sound bank for DAWs (Ableton, Logic, etc.)">
         <pkg-ref id="com.synthlenkhmer.vst3"/>
     </choice>
 
-    <choice id="choice_banks" title="Sound Banks (Documents)" description="Place encrypted bank pack in Documents folder (optional fallback)">
-        <pkg-ref id="com.synthlenkhmer.banks"/>
+    <choice id="choice_app" title="Standalone Application" description="Synthlen Khmer standalone app (finds bank from shared location)">
+        <pkg-ref id="com.synthlenkhmer.app"/>
     </choice>
 
-    <pkg-ref id="com.synthlenkhmer.app" version="$VERSION" onConclusion="none">component-app.pkg</pkg-ref>
     <pkg-ref id="com.synthlenkhmer.vst3" version="$VERSION" onConclusion="none">component-vst3.pkg</pkg-ref>
-    <pkg-ref id="com.synthlenkhmer.banks" version="$VERSION" onConclusion="none">component-banks.pkg</pkg-ref>
+    <pkg-ref id="com.synthlenkhmer.app" version="$VERSION" onConclusion="none">component-app.pkg</pkg-ref>
 </installer-gui-script>
 EOF
 
@@ -209,7 +191,6 @@ productbuild \
 # Cleanup intermediate files
 rm -f "$OUTPUT_DIR/component-vst3.pkg"
 rm -f "$OUTPUT_DIR/component-app.pkg"
-rm -f "$OUTPUT_DIR/component-banks.pkg"
 rm -f "$OUTPUT_DIR/distribution.xml"
 rm -f "$OUTPUT_DIR/license.txt"
 rm -f "$OUTPUT_DIR/welcome.txt"

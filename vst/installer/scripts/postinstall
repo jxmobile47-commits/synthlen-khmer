@@ -1,0 +1,10 @@
+#!/bin/bash
+# Postinstall: copy bank from VST3 to shared location for Standalone app
+SHARED_DIR="/Library/Application Support/Synthlen Khmer"
+mkdir -p "$SHARED_DIR"
+VST3_BANK="/Library/Audio/Plug-Ins/VST3/Synthlen Khmer.vst3/Contents/Resources/SynthlenKhmer.banks"
+if [ -f "$VST3_BANK" ]; then
+    cp "$VST3_BANK" "$SHARED_DIR/SynthlenKhmer.banks"
+    echo "Copied bank to $SHARED_DIR"
+fi
+exit 0
