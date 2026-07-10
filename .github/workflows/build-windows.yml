@@ -163,6 +163,14 @@ jobs:
           # Create self-extracting EXE using 7z SFX module
           Write-Host "Creating self-extracting EXE..."
           $sfxModule = "C:\Program Files\7-Zip\7zSD.sfx"
+          if (-not (Test-Path $sfxModule)) {
+            Write-Host "7zSD.sfx not found, downloading..."
+            Invoke-WebRequest -Uri "https://github.com/chromiumembedded/cef/raw/master/third_party/7z/7zSD.sfx" -OutFile $sfxModule -ErrorAction SilentlyContinue
+            if (-not (Test-Path $sfxModule)) {
+              # Fallback: check other locations
+              $sfxModule = Get-ChildItem "C:\Program Files\7-Zip" -Filter "*.sfx" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+            }
+          }
           $sfxConfig = "$outDir\sfx_config.txt"
           @(
             ';!@Install@!UTF-8!',
@@ -173,10 +181,22 @@ jobs:
           ) | Out-File $sfxConfig -Encoding UTF8
 
           $exePath = "$outDir\SynthlenKhmer-Setup-$version.exe"
-          # Combine: SFX module + config + 7z archive = self-extracting EXE
-          cmd /c copy /b `"$sfxModule`" + `"$sfxConfig`" + `"$outDir\SynthlenKhmer-Setup-$version.7z`" `"$exePath`"
-          Remove-Item $sfxConfig -Force
-          Remove-Item "$outDir\SynthlenKhmer-Setup-$version.7z" -Force
+          if ($sfxModule -and (Test-Path $sfxModule)) {
+            Write-Host "Using SFX module: $sfxModule"
+            # Combine using PowerShell binary streams (SFX module + config + 7z archive)
+            $out = [System.IO.File]::Create($exePath)
+            $sfx = [System.IO.File]::OpenRead($sfxModule); $sfx.CopyTo($out, 1048576); $sfx.Close()
+            $cfg = [System.IO.File]::OpenRead($sfxConfig); $cfg.CopyTo($out, 1048576); $cfg.Close()
+            $archive = [System.IO.File]::OpenRead("$outDir\SynthlenKhmer-Setup-$version.7z"); $archive.CopyTo($out, 1048576); $archive.Close()
+            $out.Close()
+            Remove-Item $sfxConfig -Force
+            Remove-Item "$outDir\SynthlenKhmer-Setup-$version.7z" -Force
+            Write-Host "Self-extracting EXE created!"
+          } else {
+            Write-Host "WARNING: No SFX module found - falling back to .7z archive"
+            Remove-Item $sfxConfig -Force -ErrorAction SilentlyContinue
+            Rename-Item "$outDir\SynthlenKhmer-Setup-$version.7z" "$exePath" -ErrorAction SilentlyContinue
+          }
 
           # Check if under 2GB for GitHub Release
           $installerSize = (Get-Item $exePath).Length
