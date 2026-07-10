@@ -160,58 +160,24 @@ jobs:
           Write-Host "Creating installer 7z with max compression..."
           7z a -t7z -mx=9 -mfb=273 "$outDir\SynthlenKhmer-Setup-$version.7z" "$staging\*"
 
-          # Create self-extracting EXE using 7z SFX module
-          Write-Host "Creating self-extracting EXE..."
-          $sfxModule = "C:\Program Files\7-Zip\7zSD.sfx"
-          if (-not (Test-Path $sfxModule)) {
-            Write-Host "7zSD.sfx not found, downloading..."
-            Invoke-WebRequest -Uri "https://github.com/chromiumembedded/cef/raw/master/third_party/7z/7zSD.sfx" -OutFile $sfxModule -ErrorAction SilentlyContinue
-            if (-not (Test-Path $sfxModule)) {
-              # Fallback: check other locations
-              $sfxModule = Get-ChildItem "C:\Program Files\7-Zip" -Filter "*.sfx" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-            }
-          }
-          $sfxConfig = "$outDir\sfx_config.txt"
-          @(
-            ';!@Install@!UTF-8!',
-            'Title="Synthlen Khmer Installer v1.0.0"',
-            'BeginPrompt="Do you want to install Synthlen Khmer?"',
-            'RunProgram="Install-SynthlenKhmer.bat"',
-            ';!@InstallEnd@!'
-          ) | Out-File $sfxConfig -Encoding UTF8
-
-          $exePath = "$outDir\SynthlenKhmer-Setup-$version.exe"
-          if ($sfxModule -and (Test-Path $sfxModule)) {
-            Write-Host "Using SFX module: $sfxModule"
-            # Combine using PowerShell binary streams (SFX module + config + 7z archive)
-            $out = [System.IO.File]::Create($exePath)
-            $sfx = [System.IO.File]::OpenRead($sfxModule); $sfx.CopyTo($out, 1048576); $sfx.Close()
-            $cfg = [System.IO.File]::OpenRead($sfxConfig); $cfg.CopyTo($out, 1048576); $cfg.Close()
-            $archive = [System.IO.File]::OpenRead("$outDir\SynthlenKhmer-Setup-$version.7z"); $archive.CopyTo($out, 1048576); $archive.Close()
-            $out.Close()
-            Remove-Item $sfxConfig -Force
-            Remove-Item "$outDir\SynthlenKhmer-Setup-$version.7z" -Force
-            Write-Host "Self-extracting EXE created!"
-          } else {
-            Write-Host "WARNING: No SFX module found - falling back to .7z archive"
-            Remove-Item $sfxConfig -Force -ErrorAction SilentlyContinue
-            Rename-Item "$outDir\SynthlenKhmer-Setup-$version.7z" "$exePath" -ErrorAction SilentlyContinue
-          }
+          # Keep the .7z archive as the installer (reliable, no SFX dependency)
+          Write-Host "Installer 7z created."
+          $installerPath = "$outDir\SynthlenKhmer-Setup-$version.7z"
 
           # Check if under 2GB for GitHub Release
-          $installerSize = (Get-Item $exePath).Length
-          Write-Host "Installer EXE size: $([math]::Round($installerSize/1MB,1)) MB"
+          $installerSize = (Get-Item $installerPath).Length
+          Write-Host "Installer size: $([math]::Round($installerSize/1MB,1)) MB"
           if ($installerSize -gt 1900000000) {
             Write-Host "Still over 2GB - splitting into parts..."
-            7z a -v1900m "$outDir\SynthlenKhmer-Setup-$version.split.7z" $exePath
-            Remove-Item $exePath -Force
+            7z a -v1900m "$outDir\SynthlenKhmer-Setup-$version.split.7z" $installerPath
+            Remove-Item $installerPath -Force
             Get-ChildItem "$outDir\SynthlenKhmer-Setup-$version.split.7z.*" | ForEach-Object {
               $newName = $_.Name -replace '\.split\.7z\.(\d+)', '.7z.$1'
               Rename-Item $_.FullName $newName
             }
             Write-Host "Split into parts"
           } else {
-            Write-Host "Under 2GB - single EXE file OK!"
+            Write-Host "Under 2GB - single file OK!"
           }
 
           Write-Host "Installer output:"
@@ -234,19 +200,20 @@ jobs:
 
             The sound bank is now bundled inside the VST3 plugin - install once, no separate bank download needed.
 
-            ### Install (single .exe file)
-            1. Download `SynthlenKhmer-Setup-1.0.0.exe`
-            2. Double-click to run (will request admin permission automatically)
-            3. Click Yes on the install prompt
+            ### Install
+            1. Download `SynthlenKhmer-Setup-1.0.0.7z`
+            2. Extract with 7-Zip (free from https://7-zip.org) to a folder
+            3. Double-click `Install-SynthlenKhmer.bat` (will auto-request admin permission)
             4. Done! Bank is bundled in VST3 and copied to shared locations:
                - VST3 → `C:\Program Files\Common Files\VST3\Synthlen Khmer.vst3`
                - Standalone → `C:\Program Files\Synthlen Khmer\Synthlen Khmer.exe`
                - Banks → `Documents\Synthlen Khmer\` + `C:\ProgramData\Synthlen Khmer\`
+               - Desktop shortcut created automatically
 
             ### Install (if split .7z part files)
             1. Download ALL `.7z.*` part files
-            2. Recombine: `copy /b SynthlenKhmer-Setup-1.0.0.7z.001+SynthlenKhmer-Setup-1.0.0.7z.002 SynthlenKhmer-Setup-1.0.0.exe`
-            3. Double-click `SynthlenKhmer-Setup-1.0.0.exe` to install
+            2. Recombine: `copy /b SynthlenKhmer-Setup-1.0.0.7z.001+SynthlenKhmer-Setup-1.0.0.7z.002 SynthlenKhmer-Setup-1.0.0.7z`
+            3. Extract and run `Install-SynthlenKhmer.bat`
 
             ### Presets included
             - Russey Khyal
