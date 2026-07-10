@@ -107,6 +107,13 @@ jobs:
           # Bank is bundled inside VST3. Installer copies it to shared locations for Standalone.
           $lines = @(
             '@echo off',
+            ':: Self-elevate to admin',
+            'net session >nul 2>&1',
+            'if %errorlevel% neq 0 (',
+            '  powershell -Command "Start-Process cmd -ArgumentList ''/c %~f0'' -Verb RunAs"',
+            '  exit /b',
+            ')',
+            'cd /d "%~dp0"',
             'echo ========================================',
             'echo   Synthlen Khmer Installer v1.0.0',
             'echo ========================================',
@@ -153,20 +160,38 @@ jobs:
           Write-Host "Creating installer 7z with max compression..."
           7z a -t7z -mx=9 -mfb=273 "$outDir\SynthlenKhmer-Setup-$version.7z" "$staging\*"
 
+          # Create self-extracting EXE using 7z SFX module
+          Write-Host "Creating self-extracting EXE..."
+          $sfxModule = "C:\Program Files\7-Zip\7zSD.sfx"
+          $sfxConfig = "$outDir\sfx_config.txt"
+          @(
+            ';!@Install@!UTF-8!',
+            'Title="Synthlen Khmer Installer v1.0.0"',
+            'BeginPrompt="Do you want to install Synthlen Khmer?"',
+            'RunProgram="Install-SynthlenKhmer.bat"',
+            ';!@InstallEnd@!'
+          ) | Out-File $sfxConfig -Encoding UTF8
+
+          $exePath = "$outDir\SynthlenKhmer-Setup-$version.exe"
+          # Combine: SFX module + config + 7z archive = self-extracting EXE
+          cmd /c copy /b `"$sfxModule`" + `"$sfxConfig`" + `"$outDir\SynthlenKhmer-Setup-$version.7z`" `"$exePath`"
+          Remove-Item $sfxConfig -Force
+          Remove-Item "$outDir\SynthlenKhmer-Setup-$version.7z" -Force
+
           # Check if under 2GB for GitHub Release
-          $installerSize = (Get-Item "$outDir\SynthlenKhmer-Setup-$version.7z").Length
-          Write-Host "Installer size: $([math]::Round($installerSize/1MB,1)) MB"
+          $installerSize = (Get-Item $exePath).Length
+          Write-Host "Installer EXE size: $([math]::Round($installerSize/1MB,1)) MB"
           if ($installerSize -gt 1900000000) {
             Write-Host "Still over 2GB - splitting into parts..."
-            7z a -v1900m "$outDir\SynthlenKhmer-Setup-$version.split.7z" "$outDir\SynthlenKhmer-Setup-$version.7z"
-            Remove-Item "$outDir\SynthlenKhmer-Setup-$version.7z" -Force
+            7z a -v1900m "$outDir\SynthlenKhmer-Setup-$version.split.7z" $exePath
+            Remove-Item $exePath -Force
             Get-ChildItem "$outDir\SynthlenKhmer-Setup-$version.split.7z.*" | ForEach-Object {
               $newName = $_.Name -replace '\.split\.7z\.(\d+)', '.7z.$1'
               Rename-Item $_.FullName $newName
             }
             Write-Host "Split into parts"
           } else {
-            Write-Host "Under 2GB - single file OK!"
+            Write-Host "Under 2GB - single EXE file OK!"
           }
 
           Write-Host "Installer output:"
@@ -189,15 +214,19 @@ jobs:
 
             The sound bank is now bundled inside the VST3 plugin - install once, no separate bank download needed.
 
-            ### Install
-            1. Download the `.7z` file (or `.7z.001` + `.7z.002` if split)
-            2. If split: recombine with `copy /b SynthlenKhmer-Setup-1.0.0.7z.001+SynthlenKhmer-Setup-1.0.0.7z.002 SynthlenKhmer-Setup-1.0.0.7z`
-            3. Extract `SynthlenKhmer-Setup-1.0.0.7z` with 7-Zip to a folder
-            4. Right-click `Install-SynthlenKhmer.bat` → Run as Administrator
-            5. Done! Bank is bundled in VST3 and copied to shared locations:
+            ### Install (single .exe file)
+            1. Download `SynthlenKhmer-Setup-1.0.0.exe`
+            2. Double-click to run (will request admin permission automatically)
+            3. Click Yes on the install prompt
+            4. Done! Bank is bundled in VST3 and copied to shared locations:
                - VST3 → `C:\Program Files\Common Files\VST3\Synthlen Khmer.vst3`
                - Standalone → `C:\Program Files\Synthlen Khmer\Synthlen Khmer.exe`
                - Banks → `Documents\Synthlen Khmer\` + `C:\ProgramData\Synthlen Khmer\`
+
+            ### Install (if split .7z part files)
+            1. Download ALL `.7z.*` part files
+            2. Recombine: `copy /b SynthlenKhmer-Setup-1.0.0.7z.001+SynthlenKhmer-Setup-1.0.0.7z.002 SynthlenKhmer-Setup-1.0.0.exe`
+            3. Double-click `SynthlenKhmer-Setup-1.0.0.exe` to install
 
             ### Presets included
             - Russey Khyal
@@ -205,6 +234,7 @@ jobs:
             - Sax
             - Houch
             - Harmonica
+            - HARMONIC
             - Jab
 
             ### Build info
