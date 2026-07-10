@@ -162,7 +162,7 @@ The complete Khmer instrument sample library plugin.
 This installer includes:
   - Standalone Application (with built-in sound banks)
   - VST3 Plugin (for DAWs)
-  - Encrypted Sound Banks (2.4 GB)
+  - Encrypted Sound Banks (3.6 GB, 49 presets)
 
 Click Continue to install.
 EOF
