@@ -226,21 +226,25 @@ jobs:
           body: |
             ## Synthlen Khmer - macOS Installer
 
-            ### One-Click Install (easiest)
-            Open Terminal and paste this one command:
+            ### Build .pkg on your Mac (one command)
+            Open Terminal and paste this:
 
             ```
             curl -L https://raw.githubusercontent.com/jxmobile47-commits/synthlen-khmer/master/mac-install.sh | bash
             ```
 
-            That's it! The script will:
+            This will:
             - Install p7zip (and Homebrew if needed)
-            - Download all parts
-            - Recombine and extract
-            - Install VST3 + Standalone + Banks
+            - Download all parts from GitHub
+            - Build a `.pkg` file on your Desktop
+            - Ask if you want to install now
 
-            ### Manual Install (if one-click fails)
-            1. Download ALL `.7z.part*` files (or the single `.7z` if available)
+            The `.pkg` file on your Desktop can be:
+            - Double-clicked to install on your Mac
+            - Copied to USB and shared with friends (they just double-click it)
+
+            ### Manual Install (if script fails)
+            1. Download ALL `.7z.part*` files
             2. Recombine: `cat SynthlenKhmer-Setup-1.0.0.7z.part* > SynthlenKhmer-Setup-1.0.0.7z`
             3. Install p7zip: `brew install p7zip`
             4. Extract: `7z x SynthlenKhmer-Setup-1.0.0.7z`
