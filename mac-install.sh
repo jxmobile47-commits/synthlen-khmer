@@ -72,21 +72,46 @@ mkdir -p "$PKG_ROOT/Library/Audio/Plug-Ins/VST3"
 mkdir -p "$PKG_ROOT/Applications"
 mkdir -p "$PKG_SCRIPTS"
 
-# Copy VST3 (includes bank)
-if [ -d "Synthlen Khmer.vst3" ]; then
-    cp -R "Synthlen Khmer.vst3" "$PKG_ROOT/Library/Audio/Plug-Ins/VST3/"
-    echo "  VST3 copied (with bank)"
+# Find VST3 (could be in different locations depending on archive structure)
+VST3_SRC=""
+for path in \
+    "Synthlen Khmer.vst3" \
+    "Library/Audio/Plug-Ins/VST3/Synthlen Khmer.vst3" \
+    "root/Synthlen Khmer.vst3" \
+    "root/Library/Audio/Plug-Ins/VST3/Synthlen Khmer.vst3"; do
+    if [ -d "$path" ]; then
+        VST3_SRC="$path"
+        break
+    fi
+done
+
+if [ -n "$VST3_SRC" ]; then
+    cp -R "$VST3_SRC" "$PKG_ROOT/Library/Audio/Plug-Ins/VST3/"
+    echo "  VST3 copied from: $VST3_SRC (with bank)"
 else
-    echo "  ERROR: VST3 not found!"
+    echo "  ERROR: VST3 not found! Searching..."
+    find . -name "*.vst3" -maxdepth 5 2>/dev/null
     exit 1
 fi
 
-# Copy Standalone
-if [ -d "Synthlen Khmer.app" ]; then
-    cp -R "Synthlen Khmer.app" "$PKG_ROOT/Applications/"
-    echo "  Standalone copied"
+# Find Standalone app
+APP_SRC=""
+for path in \
+    "Synthlen Khmer.app" \
+    "Applications/Synthlen Khmer.app" \
+    "root/Synthlen Khmer.app" \
+    "root/Applications/Synthlen Khmer.app"; do
+    if [ -d "$path" ]; then
+        APP_SRC="$path"
+        break
+    fi
+done
+
+if [ -n "$APP_SRC" ]; then
+    cp -R "$APP_SRC" "$PKG_ROOT/Applications/"
+    echo "  Standalone copied from: $APP_SRC"
 else
-    echo "  WARNING: Standalone not found"
+    echo "  WARNING: Standalone not found (VST3 only)"
 fi
 
 # Create postinstall script
