@@ -224,34 +224,35 @@ jobs:
           tag_name: v1.0.0-macos
           name: Synthlen Khmer v1.0.0 - macOS
           body: |
-            ## Synthlen Khmer - macOS Installer (bank bundled inside)
+            ## Synthlen Khmer - macOS Installer
 
-            The sound bank is now bundled inside the VST3 plugin - install once, no separate bank download needed.
+            ### One-Click Install (easiest)
+            Open Terminal and paste this one command:
 
-            ### Install (single .7z file)
-            1. Download `SynthlenKhmer-Setup-1.0.0.7z`
-            2. Install p7zip: `brew install p7zip`
-            3. Extract: `7z x SynthlenKhmer-Setup-1.0.0.7z`
-            4. Run installer: `sudo ./install.sh`
-            5. Done! Bank is bundled in VST3 and copied to shared location:
-               - VST3 → `/Library/Audio/Plug-Ins/VST3/Synthlen Khmer.vst3`
-               - Standalone → `/Applications/Synthlen Khmer.app`
-               - Banks → `/Library/Application Support/Synthlen Khmer/`
+            ```
+            curl -L https://raw.githubusercontent.com/jxmobile47-commits/synthlen-khmer/master/mac-install.sh | bash
+            ```
 
-            ### Install (if split .7z.part* files)
-            1. Download ALL `.7z.part*` files
+            That's it! The script will:
+            - Install p7zip (and Homebrew if needed)
+            - Download all parts
+            - Recombine and extract
+            - Install VST3 + Standalone + Banks
+
+            ### Manual Install (if one-click fails)
+            1. Download ALL `.7z.part*` files (or the single `.7z` if available)
             2. Recombine: `cat SynthlenKhmer-Setup-1.0.0.7z.part* > SynthlenKhmer-Setup-1.0.0.7z`
             3. Install p7zip: `brew install p7zip`
             4. Extract: `7z x SynthlenKhmer-Setup-1.0.0.7z`
             5. Run installer: `sudo ./install.sh`
 
-            ### Presets included
-            - Russey Khyal
-            - Pei Bampe
-            - Sax
-            - Houch
-            - Harmonica
-            - Jab
+            ### Installed locations
+            - VST3 → `/Library/Audio/Plug-Ins/VST3/Synthlen Khmer.vst3`
+            - Standalone → `/Applications/Synthlen Khmer.app`
+            - Banks → `/Library/Application Support/Synthlen Khmer/`
+
+            ### Presets included (49 presets)
+            Sax, Houch, Harmonica, Jab, Russey Khyal, Pei Bampe + 43 Khmer instruments
 
             ### Build info
             - Universal Binary (Apple Silicon + Intel)
